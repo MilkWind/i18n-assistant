@@ -379,9 +379,9 @@ print(f"覆盖率: {analysis_result.coverage_percentage:.1f}%")
 
 ## 📞 联系方式
 
-- 项目主页: [GitHub Repository](https://github.com/your-username/i18n-assistant)
-- 问题反馈: [Issues](https://github.com/your-username/i18n-assistant/issues)
-- 功能建议: [Discussions](https://github.com/your-username/i18n-assistant/discussions)
+- 项目主页: [GitHub Repository](https://github.com/MilkWind/i18n-assistant)
+- 问题反馈: [Issues](https://github.com/your-MilkWind/i18n-assistant/issues)
+- 功能建议: [Discussions](https://github.com/MilkWind/i18n-assistant/discussions)
 
 ---
 
