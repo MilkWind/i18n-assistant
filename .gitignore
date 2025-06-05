@@ -2,6 +2,7 @@
 .venv
 __pycache__
 i18n-analysis
+phases_record
 *.pyc
 *.pyo
 workspace.xml
