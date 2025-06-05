@@ -1,6 +1,7 @@
 .idea
 .venv
 __pycache__
+i18n-analysis
 *.pyc
 *.pyo
-i18n-analysis
+workspace.xml

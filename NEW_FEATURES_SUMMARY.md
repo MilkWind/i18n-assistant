@@ -110,6 +110,12 @@ config_manager.load_config("my_config.json")  # 加载
    - 更新了日志格式配置，使用自定义时间格式
    - 修改了主函数，分析完成后保持程序运行
 
+5. **src/gui/widgets/result_widget.py**
+   - 修复了属性错误：`MissingKey.suggested_file` → `MissingKey.suggested_files`
+   - 修复了属性错误：`UnusedKey.file_path` → `UnusedKey.i18n_file` 
+   - 修复了属性错误：`FileCoverage.used_keys_count` → `FileCoverage.total_calls`
+   - 更新了表格标题以正确反映数据内容
+
 ### 新增的文件：
 1. **test_new_features.py**
    - 测试脚本，验证所有新功能
@@ -151,10 +157,21 @@ python main.py --cli
 
 ## 总结
 
-本次实现完全满足了用户提出的三个需求：
+本次实现完全满足了用户提出的三个需求，并修复了导致程序意外退出的问题：
 
 1. ✅ **配置保存和加载**：提供了完整的GUI界面和底层API支持
 2. ✅ **时间格式标准化**：全面统一为 yyyy-MM-dd HH:mm:ss 格式
 3. ✅ **程序保持运行**：分析完成后提供友好的用户交互界面
+4. ✅ **修复程序崩溃问题**：解决了结果显示时的AttributeError导致的程序意外退出
+
+### 重要修复说明
+
+最初用户报告的"程序在分析完成后退出"实际上是由于结果显示模块中的属性错误导致程序崩溃退出，而不是程序设计上的问题。我们修复了以下关键错误：
+
+- `MissingKey` 对象的 `suggested_files` 属性被错误地访问为 `suggested_file`
+- `UnusedKey` 对象的 `i18n_file` 属性被错误地访问为 `file_path`
+- `FileCoverage` 对象的属性名称不匹配问题
+
+现在程序可以正常完成分析并显示结果，不会再出现意外退出的情况。
 
 所有功能都经过测试验证，可以立即投入使用。 
