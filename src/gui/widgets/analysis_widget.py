@@ -76,7 +76,7 @@ class AnalysisWorker(QThread):
                 return
             
             # 创建兼容的数据结构
-            from ...core.analyzer import ProjectScanResult
+            from ...core.scanner import ProjectScanResult
             scan_result = ProjectScanResult.from_summary_and_results(scan_summary, scan_results)
             
             analysis_result = analyzer.analyze(scan_result, parse_result)
@@ -393,7 +393,7 @@ class AnalysisWidget(QWidget):
     def get_timestamp(self) -> str:
         """获取时间戳"""
         from datetime import datetime
-        return datetime.now().strftime("%H:%M:%S")
+        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
     def get_analysis_results(self) -> Optional[Dict[str, Any]]:
         """获取分析结果"""

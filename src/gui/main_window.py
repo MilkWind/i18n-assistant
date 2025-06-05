@@ -177,6 +177,13 @@ class MainWindow(QMainWindow):
         save_action.triggered.connect(self.save_config)
         file_menu.addAction(save_action)
         
+        # 另存为配置
+        save_as_action = QAction("另存为配置(&A)", self)
+        save_as_action.setShortcut("Ctrl+Shift+S")
+        save_as_action.setStatusTip("将当前配置保存到新文件")
+        save_as_action.triggered.connect(self.save_config_as)
+        file_menu.addAction(save_as_action)
+        
         file_menu.addSeparator()
         
         # 退出
@@ -343,12 +350,75 @@ class MainWindow(QMainWindow):
         
     def open_config(self) -> None:
         """打开配置"""
-        # TODO: 实现配置文件打开功能
-        QMessageBox.information(self, "信息", "配置文件打开功能将在后续版本中实现")
+        from PyQt6.QtWidgets import QFileDialog
+        
+        # 选择配置文件
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "打开配置文件",
+            "",
+            "JSON配置文件 (*.json);;所有文件 (*)"
+        )
+        
+        if file_path:
+            try:
+                # 使用配置管理器加载配置
+                config_manager = self.config_widget.config_manager
+                config_manager.load_config(file_path)
+                config = config_manager.get_config()
+                
+                # 更新配置小部件显示
+                self.config_widget.load_config()
+                
+                # 发送配置变更信号
+                self.on_config_changed(config)
+                
+                self.status_label.setText(f"已加载配置文件: {os.path.basename(file_path)}")
+                QMessageBox.information(self, "成功", f"配置文件已成功加载：{os.path.basename(file_path)}")
+                
+            except Exception as e:
+                QMessageBox.critical(self, "错误", f"加载配置文件失败：{str(e)}")
         
     def save_config(self) -> None:
         """保存配置"""
-        self.config_widget.save_config()
+        from PyQt6.QtWidgets import QFileDialog
+        
+        # 获取当前配置
+        if not self.config:
+            QMessageBox.warning(self, "警告", "没有配置可保存，请先配置项目参数！")
+            return
+        
+        # 选择保存路径
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "保存配置文件",
+            "i18n-assistant-config.json",
+            "JSON配置文件 (*.json);;所有文件 (*)"
+        )
+        
+        if file_path:
+            try:
+                # 更新配置管理器的配置
+                config_manager = self.config_widget.config_manager
+                current_config = self.config_widget.get_config()
+                config_manager.config = current_config
+                
+                # 保存到指定文件
+                success = config_manager.save_config(file_path)
+                
+                if success:
+                    self.status_label.setText(f"配置已保存到: {os.path.basename(file_path)}")
+                    QMessageBox.information(self, "成功", f"配置文件已成功保存到：{os.path.basename(file_path)}")
+                else:
+                    QMessageBox.critical(self, "错误", "保存配置文件失败！")
+                    
+            except Exception as e:
+                QMessageBox.critical(self, "错误", f"保存配置文件失败：{str(e)}")
+    
+    def save_config_as(self) -> None:
+        """另存为配置"""
+        # 保存配置文件，强制显示文件选择对话框
+        self.save_config()
         
     def validate_config(self) -> None:
         """验证配置"""

@@ -307,7 +307,7 @@ class ResultWidget(QWidget):
         # 表格
         self.coverage_table = QTableWidget()
         self.coverage_table.setColumnCount(5)
-        self.coverage_table.setHorizontalHeaderLabels(["文件", "使用键数", "匹配键数", "覆盖率", "状态"])
+        self.coverage_table.setHorizontalHeaderLabels(["文件", "总调用数", "覆盖调用数", "覆盖率", "状态"])
         
         self.setup_table_style(self.coverage_table)
         
@@ -382,7 +382,13 @@ class ResultWidget(QWidget):
             self.missing_table.setItem(i, 0, QTableWidgetItem(missing_key.key))
             self.missing_table.setItem(i, 1, QTableWidgetItem(missing_key.file_path))
             self.missing_table.setItem(i, 2, QTableWidgetItem(str(missing_key.line_number)))
-            self.missing_table.setItem(i, 3, QTableWidgetItem(missing_key.suggested_file or "N/A"))
+            
+            # 处理建议文件列表
+            if hasattr(missing_key, 'suggested_files') and missing_key.suggested_files:
+                suggested_files_text = ", ".join(missing_key.suggested_files)
+            else:
+                suggested_files_text = "N/A"
+            self.missing_table.setItem(i, 3, QTableWidgetItem(suggested_files_text))
             
         self.missing_table.resizeColumnsToContents()
         
@@ -392,10 +398,12 @@ class ResultWidget(QWidget):
         
         for i, unused_key in enumerate(unused_keys):
             self.unused_table.setItem(i, 0, QTableWidgetItem(unused_key.key))
-            self.unused_table.setItem(i, 1, QTableWidgetItem(unused_key.file_path))
+            # UnusedKey 使用 i18n_file 属性，而不是 file_path
+            file_path = getattr(unused_key, 'i18n_file', getattr(unused_key, 'file_path', 'N/A'))
+            self.unused_table.setItem(i, 1, QTableWidgetItem(file_path))
             
             # 限制值的显示长度
-            value = str(unused_key.value)
+            value = str(unused_key.value) if unused_key.value is not None else ""
             if len(value) > 50:
                 value = value[:47] + "..."
             self.unused_table.setItem(i, 2, QTableWidgetItem(value))
@@ -419,8 +427,9 @@ class ResultWidget(QWidget):
         
         for i, (file_path, coverage) in enumerate(file_coverage.items()):
             self.coverage_table.setItem(i, 0, QTableWidgetItem(file_path))
-            self.coverage_table.setItem(i, 1, QTableWidgetItem(str(coverage.used_keys_count)))
-            self.coverage_table.setItem(i, 2, QTableWidgetItem(str(coverage.matched_keys_count)))
+            # FileCoverage 实际上使用 total_calls 和 covered_calls 属性
+            self.coverage_table.setItem(i, 1, QTableWidgetItem(str(getattr(coverage, 'total_calls', 0))))
+            self.coverage_table.setItem(i, 2, QTableWidgetItem(str(getattr(coverage, 'covered_calls', 0))))
             
             # 覆盖率
             coverage_item = QTableWidgetItem(f"{coverage.coverage_percentage:.1f}%")

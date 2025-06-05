@@ -22,12 +22,19 @@ def setup_logging(level: str = "INFO") -> None:
     """设置日志"""
     log_level = getattr(logging, level.upper(), logging.INFO)
     
+    # 创建自定义格式化器，使用 yyyy-MM-dd HH:mm:ss 格式
+    formatter = logging.Formatter(
+        fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    
+    # 创建处理器并设置格式化器
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    
     logging.basicConfig(
         level=log_level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler(sys.stdout)
-        ]
+        handlers=[handler]
     )
 
 
@@ -231,6 +238,21 @@ def main() -> None:
             test_parser_module(args.i18n_path)
         
         print(f"\n测试完成!")
+        print(f"程序保持运行状态，请按 Ctrl+C 退出...")
+        
+        # 保持程序运行，等待用户输入
+        try:
+            while True:
+                user_input = input("输入 'q' 或 'quit' 退出程序: ").strip().lower()
+                if user_input in ['q', 'quit']:
+                    print("程序退出")
+                    break
+                elif user_input == 'help':
+                    print("可用命令: q/quit - 退出程序, help - 显示帮助")
+                else:
+                    print(f"未知命令: {user_input}，输入 'help' 查看可用命令")
+        except EOFError:
+            print("\n程序退出")
         
     except KeyboardInterrupt:
         print(f"\n\n用户中断操作")

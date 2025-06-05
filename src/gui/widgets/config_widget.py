@@ -205,6 +205,9 @@ class ConfigWidget(QWidget):
             
     def load_config(self) -> None:
         """加载配置到界面"""
+        # 获取最新的配置
+        self.config = self.config_manager.get_config()
+        
         # 路径设置
         self.project_path_edit.setText(self.config.project_path)
         self.i18n_path_edit.setText(self.config.i18n_path)

@@ -1,0 +1,36 @@
+{
+  "project_path": "D:/development/app-projects/questions-party/questions-party-frontend",
+  "i18n_path": "D:/development/app-projects/questions-party/questions-party-frontend/src/locales",
+  "output_path": "./i18n-analysis",
+  "ignore_patterns": [
+    "node_modules/**",
+    ".git/**",
+    "dist/**",
+    "build/**",
+    "__pycache__/**",
+    ".vscode/**",
+    ".idea/**",
+    ".venv/**"
+  ],
+  "i18n_patterns": [
+    "(?<!\\$)t\\([\\'\"`](.*?)[\\'\"`]\\)",
+    "\\$t\\([\\'\"`](.*?)[\\'\"`]\\)",
+    "i18n\\.t\\([\\'\"`](.*?)[\\'\"`]\\)",
+    "(?<![\\w])_\\([\\'\"`](.*?)[\\'\"`]\\)",
+    "gettext\\([\\'\"`](.*?)[\\'\"`]\\)"
+  ],
+  "file_extensions": [
+    ".js",
+    ".ts",
+    ".jsx",
+    ".tsx",
+    ".vue",
+    ".py",
+    ".html"
+  ],
+  "parser_type": "json",
+  "max_threads": 4,
+  "encoding": "utf-8",
+  "generate_cleaned_files": true,
+  "report_format": "text"
+}

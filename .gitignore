@@ -1,2 +1,6 @@
 .idea
 .venv
+__pycache__
+*.pyc
+*.pyo
+i18n-analysis
