@@ -113,28 +113,8 @@ python main.py --cli --test scanner --project-path /path/to/your/project
 pip install pyinstaller
 ```
 
-#### 打包选项
+#### 项目打包
 
-**方式一：标准打包（生成目录）**
-```bash
-# 打包成目录形式（推荐，启动速度快）
-pyinstaller build.spec
-
-# 生成的文件位于：
-# dist/i18n-assistant/        - 命令行版本目录
-# dist/i18n-assistant-gui/    - GUI版本目录
-```
-
-**方式二：单文件打包（便携版）**
-```bash
-# GUI版本 - 无控制台窗口（推荐用户使用）
-pyinstaller --onefile --windowed --name=i18n-assistant-gui --hidden-import=src.gui.main_window --add-data="src;src" gui_app.py
-
-# 命令行版本 - 带控制台窗口
-pyinstaller --onefile --name=i18n-assistant --hidden-import=src.core.config --add-data="src;src" main.py
-```
-
-**方式三：自定义单文件打包**
 ```bash
 # 完整的单文件打包命令（包含所有依赖）
 pyinstaller --onefile --windowed ^
@@ -152,55 +132,6 @@ pyinstaller --onefile --windowed ^
     --exclude-module=tkinter ^
     --exclude-module=matplotlib ^
     gui_app.py
-```
-
-#### 打包后的文件
-
-- **GUI版本**: `dist/i18n-assistant-gui.exe`
-  - 双击即可启动图形界面
-  - 无控制台窗口，用户友好
-  
-- **命令行版本**: `dist/i18n-assistant.exe`
-  - 支持所有命令行参数
-  - 适合自动化脚本使用
-
-#### 注意事项
-
-1. **文件大小**: 单文件版本约50-80MB，但便于分发
-2. **启动速度**: 单文件版本首次启动较慢（需要解压）
-3. **杀毒软件**: 某些杀毒软件可能误报，属正常现象
-4. **系统兼容性**: 在目标系统类型上编译可获得最佳兼容性
-
-#### 分发建议
-
-- **最终用户**: 使用GUI单文件版本 `i18n-assistant-gui.exe`
-- **开发者/自动化**: 使用命令行版本 `i18n-assistant.exe`
-- **企业部署**: 使用目录版本（启动速度更快）
-
-#### 常见问题解决
-
-**问题1: 打包后程序无法启动**
-```bash
-# 解决方案：检查隐藏导入
-pyinstaller --onefile --windowed --debug=all gui_app.py
-```
-
-**问题2: 缺少模块错误**
-```bash
-# 解决方案：添加缺失的隐藏导入
-pyinstaller --onefile --hidden-import=模块名 gui_app.py
-```
-
-**问题3: GUI界面显示异常**
-```bash
-# 解决方案：确保PyQt6正确打包
-pyinstaller --onefile --windowed --collect-all PyQt6 gui_app.py
-```
-
-**问题4: 文件过大**
-```bash
-# 解决方案：排除不需要的模块
-pyinstaller --onefile --exclude-module=tkinter --exclude-module=matplotlib gui_app.py
 ```
 
 ## 📁 项目结构
