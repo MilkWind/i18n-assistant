@@ -1,8 +1,47 @@
-.idea
-.venv
-__pycache__
-i18n-analysis
-phases_record
-*.pyc
-*.pyo
+# Custom ignore rules
+i18n-analysis/
+phases_record/
+i18n-assistant-config.json
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions (e.g., compiled from Cython)
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.Python
+develop-eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# IDE/code editor files (customize as needed)
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
 workspace.xml
+
+# Environment variables and secrets
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
