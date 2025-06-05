@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QTabWidget, QMenuBar, QStatusBar, QToolBar,
     QMessageBox, QApplication, QSplashScreen,
-    QLabel, QPushButton
+    QLabel, QPushButton, QScrollArea, QGroupBox
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QIcon, QPixmap, QFont, QAction
@@ -34,8 +34,50 @@ class WelcomeWidget(QWidget):
         
     def setup_ui(self) -> None:
         """设置UI"""
-        layout = QVBoxLayout(self)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # 创建滚动区域以支持更多内容
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        
+        # 创建内容小部件
+        content_widget = QWidget()
+        scroll_area.setWidget(content_widget)
+        
+        # 设置主布局
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(scroll_area)
+        
+        # 内容布局
+        layout = QVBoxLayout(content_widget)
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        # 标题区域
+        self.create_header_section(layout)
+        
+        # 功能介绍区域
+        self.create_features_section(layout)
+        
+        # 使用指南区域
+        self.create_usage_guide_section(layout)
+        
+        # 操作步骤区域
+        self.create_steps_section(layout)
+        
+        # 快捷键说明
+        self.create_shortcuts_section(layout)
+        
+        # 常见问题
+        self.create_faq_section(layout)
+        
+        # 开始提示
+        self.create_start_section(layout)
+    
+    def create_header_section(self, layout: QVBoxLayout) -> None:
+        """创建标题区域"""
+        header_widget = QWidget()
+        header_layout = QVBoxLayout(header_widget)
+        header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # 标题
         title_label = QLabel("i18n-assistant")
@@ -48,57 +90,418 @@ class WelcomeWidget(QWidget):
                 margin-bottom: 10px;
             }
         """)
-        layout.addWidget(title_label)
+        header_layout.addWidget(title_label)
         
         # 副标题
-        subtitle_label = QLabel("国际化分析工具")
+        subtitle_label = QLabel("国际化分析工具 - 智能检测您项目的国际化覆盖情况")
         subtitle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle_label.setStyleSheet("""
             QLabel {
                 font-size: 16px;
                 color: #666;
-                margin-bottom: 30px;
+                margin-bottom: 20px;
             }
         """)
-        layout.addWidget(subtitle_label)
+        header_layout.addWidget(subtitle_label)
         
-        # 功能介绍
+        layout.addWidget(header_widget)
+    
+    def create_features_section(self, layout: QVBoxLayout) -> None:
+        """创建功能介绍区域"""
+        features_group = QGroupBox("🌟 核心功能")
+        features_group.setStyleSheet("""
+            QGroupBox {
+                font-size: 16px;
+                font-weight: bold;
+                color: #333;
+                border: 2px solid #E0E0E0;
+                border-radius: 10px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+        
+        # 主布局：水平居中
+        main_features_layout = QHBoxLayout(features_group)
+        main_features_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # 内容容器：网格布局，用于3行2列排列
+        content_widget = QWidget()
+        content_widget.setMaximumWidth(1000)
+        from PyQt6.QtWidgets import QGridLayout
+        features_layout = QGridLayout(content_widget)
+        features_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        features_layout.setHorizontalSpacing(20)  # 列间距
+        features_layout.setVerticalSpacing(15)    # 行间距
+        
         features = [
-            "🔍 智能扫描项目文件，识别国际化调用",
-            "📊 分析国际化覆盖率和使用情况",
-            "⚠️ 检测缺失、未使用和不一致的键",
-            "📈 生成详细的分析报告",
-            "🎯 提供优化建议和精简文件"
+            ("🔍", "智能扫描", "自动扫描项目文件，识别所有国际化调用（支持 t(), $t(), i18n.t() 等多种模式）"),
+            ("📊", "覆盖率分析", "精确计算国际化覆盖率，分析各文件的国际化使用情况"),
+            ("⚠️", "问题检测", "检测缺失键、未使用键和不一致键，帮助您优化国际化配置"),
+            ("📈", "详细报告", "生成 JSON/文本格式的详细分析报告，支持导出和分享"),
+            ("🎯", "优化建议", "提供针对性的优化建议和精简建议，提升国际化质量"),
+            ("💾", "配置管理", "支持保存和加载配置文件，便于重复使用和团队协作")
         ]
         
-        for feature in features:
-            feature_label = QLabel(feature)
-            feature_label.setStyleSheet("""
-                QLabel {
-                    font-size: 14px;
-                    color: #333;
-                    margin: 5px 0;
+        # 按3行2列的方式添加功能项
+        for index, (icon, title, desc) in enumerate(features):
+            row = index // 2  # 计算行号 (0, 0, 1, 1, 2, 2)
+            col = index % 2   # 计算列号 (0, 1, 0, 1, 0, 1)
+            
+            feature_widget = QWidget()
+            feature_widget.setStyleSheet("""
+                QWidget {
+                    background-color: #FAFAFA;
+                    border-radius: 8px;
                     padding: 5px;
+                    min-width: 400px;
+                }
+                QWidget:hover {
+                    background-color: #F0F8FF;
                 }
             """)
-            layout.addWidget(feature_label)
+            feature_layout = QHBoxLayout(feature_widget)
+            feature_layout.setContentsMargins(15, 10, 15, 10)
+            feature_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
             
-        layout.addStretch()
+            # 图标
+            icon_label = QLabel(icon)
+            icon_label.setStyleSheet("font-size: 20px; min-width: 30px;")
+            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            feature_layout.addWidget(icon_label)
+            
+            # 标题和描述
+            text_widget = QWidget()
+            text_layout = QVBoxLayout(text_widget)
+            text_layout.setContentsMargins(10, 0, 0, 0)
+            text_layout.setSpacing(3)
+            
+            title_label = QLabel(title)
+            title_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #2196F3;")
+            text_layout.addWidget(title_label)
+            
+            desc_label = QLabel(desc)
+            desc_label.setStyleSheet("font-size: 12px; color: #666;")
+            desc_label.setWordWrap(True)
+            text_layout.addWidget(desc_label)
+            
+            feature_layout.addWidget(text_widget)
+            
+            # 将功能项添加到网格布局的指定位置
+            features_layout.addWidget(feature_widget, row, col)
+        
+        # 将内容容器添加到主布局中
+        main_features_layout.addWidget(content_widget)
+        
+        layout.addWidget(features_group)
+    
+    def create_usage_guide_section(self, layout: QVBoxLayout) -> None:
+        """创建使用指南区域"""
+        guide_group = QGroupBox("📖 使用指南")
+        guide_group.setStyleSheet("""
+            QGroupBox {
+                font-size: 16px;
+                font-weight: bold;
+                color: #333;
+                border: 2px solid #E0E0E0;
+                border-radius: 10px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+        
+        guide_layout = QVBoxLayout(guide_group)
+        
+        # 支持的项目类型
+        project_types = QLabel("""
+        <b>🎯 支持的项目类型：</b><br><br>
+        • JavaScript/TypeScript 项目（Vue.js, React, Angular 等）<br><br>
+        • Python 项目（Django, Flask 等）<br><br>
+        • 任何使用标准国际化调用模式的项目
+        """)
+        project_types.setStyleSheet("font-size: 13px; color: #333; padding: 10px; background-color: #F8F9FA; border-radius: 5px;")
+        guide_layout.addWidget(project_types)
+        
+        # 支持的国际化格式
+        i18n_formats = QLabel("""
+        <b>📄 支持的国际化文件格式：</b><br><br>
+        • JSON 格式（推荐）- 如 en.json, zh.json<br><br>
+        • YAML 格式 - 如 en.yml, zh.yml<br><br>
+        • 嵌套结构和平铺结构均支持
+        """)
+        i18n_formats.setStyleSheet("font-size: 13px; color: #333; padding: 10px; background-color: #F8F9FA; border-radius: 5px;")
+        guide_layout.addWidget(i18n_formats)
+        
+        # 识别的调用模式
+        call_patterns = QLabel("""
+        <b>🔧 自动识别的国际化调用模式：</b><br><br>
+        • <code>t('key')</code> - 标准调用模式<br><br>
+        • <code>$t('key')</code> - Vue.js 模式<br><br>
+        • <code>i18n.t('key')</code> - 对象方法调用<br><br>
+        • <code>_('key')</code> - gettext 风格<br><br>
+        • <code>gettext('key')</code> - 标准 gettext<br><br>
+        • 支持自定义正则表达式模式
+        """)
+        call_patterns.setStyleSheet("font-size: 13px; color: #333; padding: 10px; background-color: #F8F9FA; border-radius: 5px;")
+        guide_layout.addWidget(call_patterns)
+        
+        layout.addWidget(guide_group)
+    
+    def create_steps_section(self, layout: QVBoxLayout) -> None:
+        """创建操作步骤区域"""
+        steps_group = QGroupBox("🚀 快速开始 - 三步完成分析")
+        steps_group.setStyleSheet("""
+            QGroupBox {
+                font-size: 16px;
+                font-weight: bold;
+                color: #333;
+                border: 2px solid #E0E0E0;
+                border-radius: 10px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+        
+        steps_layout = QVBoxLayout(steps_group)
+        
+        steps = [
+            {
+                "num": "1",
+                "title": "配置项目",
+                "desc": "在「配置」标签页中设置项目路径和国际化文件目录",
+                "details": [
+                    "📁 项目路径：选择要分析的项目根目录",
+                    "🌐 国际化目录：选择存放 i18n 文件的目录（如 locales、i18n）",
+                    "📤 输出目录：设置分析结果的保存位置",
+                    "⚙️ 高级选项：配置扫描规则、忽略模式等"
+                ]
+            },
+            {
+                "num": "2", 
+                "title": "开始分析",
+                "desc": "点击「分析」标签页或按 F5 开始智能分析",
+                "details": [
+                    "🔄 实时进度：查看扫描进度和当前处理的文件",
+                    "📝 分析日志：实时查看详细的分析过程",
+                    "⏸️ 随时停止：可以随时停止正在进行的分析",
+                    "⏱️ 时间显示：所有时间戳使用 yyyy-MM-dd HH:mm:ss 格式"
+                ]
+            },
+            {
+                "num": "3",
+                "title": "查看结果",
+                "desc": "在「结果」标签页查看详细的分析结果和报告",
+                "details": [
+                    "📊 统计概览：覆盖率、缺失键数量等关键指标",
+                    "⚠️ 缺失键：代码中使用但 i18n 文件中缺失的键",
+                    "🗑️ 未使用键：i18n 文件中定义但代码中未使用的键",
+                    "❌ 不一致键：在不同语言文件中存在不一致的键",
+                    "📈 文件覆盖率：各个文件的国际化覆盖情况",
+                    "💾 导出报告：支持导出 JSON 和文本格式报告"
+                ]
+            }
+        ]
+        
+        for step in steps:
+            step_widget = QWidget()
+            step_widget.setStyleSheet("""
+                QWidget {
+                    background-color: #FAFAFA;
+                    margin: 5px 0;
+                }
+            """)
+            step_layout = QVBoxLayout(step_widget)
+            step_layout.setContentsMargins(15, 10, 15, 10)
+            
+            # 步骤标题
+            title_widget = QWidget()
+            title_layout = QHBoxLayout(title_widget)
+            title_layout.setContentsMargins(0, 0, 0, 0)
+            
+            # 步骤编号
+            num_label = QLabel(step["num"])
+            num_label.setStyleSheet("""
+                QLabel {
+                    background-color: #2196F3;
+                    color: white;
+                    font-size: 16px;
+                    font-weight: bold;
+                    border-radius: 15px;
+                    min-width: 30px;
+                    max-width: 30px;
+                    min-height: 30px;
+                    max-height: 30px;
+                    text-align: center;
+                }
+            """)
+            num_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            title_layout.addWidget(num_label)
+            
+            # 步骤标题和描述
+            title_text_widget = QWidget()
+            title_text_layout = QVBoxLayout(title_text_widget)
+            title_text_layout.setContentsMargins(10, 0, 0, 0)
+            title_text_layout.setSpacing(2)
+            
+            step_title = QLabel(step["title"])
+            step_title.setStyleSheet("font-size: 16px; font-weight: bold; color: #2196F3;")
+            title_text_layout.addWidget(step_title)
+            
+            step_desc = QLabel(step["desc"])
+            step_desc.setStyleSheet("font-size: 13px; color: #666;")
+            step_desc.setWordWrap(True)
+            title_text_layout.addWidget(step_desc)
+            
+            title_layout.addWidget(title_text_widget)
+            step_layout.addWidget(title_widget)
+            
+            # 详细步骤
+            for detail in step["details"]:
+                detail_label = QLabel(f"  {detail}")
+                detail_label.setStyleSheet("font-size: 12px; color: #555; margin-left: 20px;")
+                detail_label.setWordWrap(True)
+                step_layout.addWidget(detail_label)
+            
+            steps_layout.addWidget(step_widget)
+        
+        layout.addWidget(steps_group)
+    
+    def create_shortcuts_section(self, layout: QVBoxLayout) -> None:
+        """创建快捷键说明区域"""
+        shortcuts_group = QGroupBox("⌨️ 快捷键")
+        shortcuts_group.setStyleSheet("""
+            QGroupBox {
+                font-size: 16px;
+                font-weight: bold;
+                color: #333;
+                border: 2px solid #E0E0E0;
+                border-radius: 10px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+        
+        shortcuts_layout = QVBoxLayout(shortcuts_group)
+        
+        shortcuts_text = QLabel("""
+        <table style="width: 100%; font-size: 13px;">
+        <tr><td><b>Ctrl+N</b></td><td>新建项目配置</td></tr>
+        <tr><td><b>Ctrl+O</b></td><td>打开配置文件</td></tr>
+        <tr><td><b>Ctrl+S</b></td><td>保存当前配置</td></tr>
+        <tr><td><b>Ctrl+Shift+S</b></td><td>另存为配置</td></tr>
+        <tr><td><b>F5</b></td><td>开始分析</td></tr>
+        <tr><td><b>Escape</b></td><td>停止分析</td></tr>
+        <tr><td><b>Ctrl+Q</b></td><td>退出程序</td></tr>
+        </table>
+        """)
+        shortcuts_text.setStyleSheet("padding: 10px; background-color: #F8F9FA; border-radius: 5px;")
+        shortcuts_layout.addWidget(shortcuts_text)
+        
+        layout.addWidget(shortcuts_group)
+    
+    def create_faq_section(self, layout: QVBoxLayout) -> None:
+        """创建常见问题区域"""
+        faq_group = QGroupBox("❓ 常见问题")
+        faq_group.setStyleSheet("""
+            QGroupBox {
+                font-size: 16px;
+                font-weight: bold;
+                color: #333;
+                border: 2px solid #E0E0E0;
+                border-radius: 10px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+        
+        faq_layout = QVBoxLayout(faq_group)
+        
+        faqs = [
+            ("Q: 支持哪些文件类型？", "A: 默认支持 .js, .ts, .jsx, .tsx, .vue, .py, .html 等文件，可在配置中自定义。"),
+            ("Q: 如何添加自定义的国际化调用模式？", "A: 在配置页面的「高级设置」中，可以添加自定义的正则表达式模式。"),
+            ("Q: 分析结果保存在哪里？", "A: 默认保存在项目根目录的 i18n-analysis 文件夹中，可在配置中修改。"),
+            ("Q: 可以分析大型项目吗？", "A: 支持多线程并行处理，可根据机器性能调整线程数量，适合大型项目。"),
+            ("Q: 如何与团队成员分享配置？", "A: 使用配置保存功能，将配置文件提交到版本控制系统即可分享。")
+        ]
+        
+        for question, answer in faqs:
+            faq_widget = QWidget()
+            faq_layout_inner = QVBoxLayout(faq_widget)
+            faq_layout_inner.setContentsMargins(10, 5, 10, 5)
+            
+            q_label = QLabel(question)
+            q_label.setStyleSheet("font-size: 13px; font-weight: bold; color: #2196F3; margin-bottom: 3px;")
+            q_label.setWordWrap(True)
+            faq_layout_inner.addWidget(q_label)
+            
+            a_label = QLabel(answer)
+            a_label.setStyleSheet("font-size: 12px; color: #666; margin-left: 10px;")
+            a_label.setWordWrap(True)
+            faq_layout_inner.addWidget(a_label)
+            
+            faq_layout.addWidget(faq_widget)
+        
+        layout.addWidget(faq_group)
+    
+    def create_start_section(self, layout: QVBoxLayout) -> None:
+        """创建开始提示区域"""
+        start_widget = QWidget()
+        start_layout = QVBoxLayout(start_widget)
         
         # 开始提示
-        start_label = QLabel("请在「配置」标签页中设置项目路径开始分析")
+        start_label = QLabel("🎉 现在就开始您的国际化分析之旅吧！")
         start_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         start_label.setStyleSheet("""
             QLabel {
-                font-size: 14px;
+                font-size: 16px;
+                font-weight: bold;
                 color: #2196F3;
                 background-color: #E3F2FD;
-                padding: 10px;
-                border-radius: 5px;
-                margin-top: 20px;
+                padding: 15px;
+                border-radius: 10px;
+                margin: 10px 0;
             }
         """)
-        layout.addWidget(start_label)
+        start_layout.addWidget(start_label)
+        
+        # 操作提示
+        action_label = QLabel("点击上方的「配置」标签页开始设置您的项目")
+        action_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        action_label.setStyleSheet("""
+            QLabel {
+                font-size: 14px;
+                color: #666;
+                padding: 10px;
+            }
+        """)
+        start_layout.addWidget(action_label)
+        
+        layout.addWidget(start_widget)
 
 
 class MainWindow(QMainWindow):

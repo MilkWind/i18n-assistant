@@ -116,13 +116,27 @@ config_manager.load_config("my_config.json")  # 加载
    - 修复了属性错误：`FileCoverage.used_keys_count` → `FileCoverage.total_calls`
    - 更新了表格标题以正确反映数据内容
 
+6. **src/gui/main_window.py (WelcomeWidget)**
+   - 全面重新设计欢迎页面，增加详细的使用指南
+   - 添加滚动支持，适应大量内容展示
+   - 实现模块化组件设计，包含7个主要区域
+   - 提供完整的操作步骤指导和常见问题解答
+
 ### 新增的文件：
 1. **test_new_features.py**
    - 测试脚本，验证所有新功能
    - 包含配置保存/加载、时间格式、程序保持运行的测试
 
-2. **NEW_FEATURES_SUMMARY.md**
+2. **test_welcome_page.py**
+   - 测试增强版欢迎页面的脚本
+   - 验证页面组件和功能的完整性
+
+3. **NEW_FEATURES_SUMMARY.md**
    - 本文档，详细说明所有实现的功能
+
+4. **WELCOME_PAGE_ENHANCEMENT.md**
+   - 欢迎页面增强功能的详细文档
+   - 包含设计理念、内容结构和技术实现
 
 ## 测试验证
 
@@ -131,7 +145,10 @@ config_manager.load_config("my_config.json")  # 加载
 # 运行功能测试
 python test_new_features.py
 
-# 运行GUI应用测试配置保存/加载
+# 运行欢迎页面测试
+python test_welcome_page.py
+
+# 运行GUI应用测试配置保存/加载和新欢迎页面
 python main.py
 
 # 运行CLI模式测试程序保持运行
@@ -142,6 +159,8 @@ python main.py --cli
 - ✅ 配置保存和加载功能正常工作
 - ✅ 时间格式已统一为 yyyy-MM-dd HH:mm:ss
 - ✅ 程序在分析完成后保持运行状态
+- ✅ 增强版欢迎页面加载和显示正常
+- ✅ 所有页面组件和功能完整性验证通过
 
 ## 兼容性说明
 
@@ -157,12 +176,13 @@ python main.py --cli
 
 ## 总结
 
-本次实现完全满足了用户提出的三个需求，并修复了导致程序意外退出的问题：
+本次实现完全满足了用户提出的三个需求，并修复了导致程序意外退出的问题，同时全面增强了用户体验：
 
 1. ✅ **配置保存和加载**：提供了完整的GUI界面和底层API支持
 2. ✅ **时间格式标准化**：全面统一为 yyyy-MM-dd HH:mm:ss 格式
 3. ✅ **程序保持运行**：分析完成后提供友好的用户交互界面
 4. ✅ **修复程序崩溃问题**：解决了结果显示时的AttributeError导致的程序意外退出
+5. ✅ **全面增强欢迎页面**：提供详细的使用指南、操作步骤和常见问题解答
 
 ### 重要修复说明
 
