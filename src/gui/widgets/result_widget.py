@@ -37,8 +37,32 @@ class StatsWidget(QWidget):
         self.coverage_widget = self.create_coverage_widget()
         layout.addWidget(self.coverage_widget)
         
-        # 统计卡片
-        stats_layout = QVBoxLayout()
+        # 创建滚动区域用于统计卡片
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)  # 隐藏滚动条
+        scroll_area.setMaximumWidth(450)  # 增加宽度以容纳2列卡片
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+            QScrollArea > QWidget > QWidget {
+                background-color: transparent;
+            }
+        """)
+        
+        # 统计卡片容器
+        stats_container = QWidget()
+        stats_container.setStyleSheet("background-color: transparent;")
+        
+        # 使用网格布局实现每行2个卡片
+        from PyQt6.QtWidgets import QGridLayout
+        stats_layout = QGridLayout(stats_container)
+        stats_layout.setContentsMargins(5, 5, 5, 5)
+        stats_layout.setHorizontalSpacing(10)
+        stats_layout.setVerticalSpacing(10)
         
         self.stats_cards = {}
         stats_items = [
@@ -48,12 +72,21 @@ class StatsWidget(QWidget):
             ("inconsistent_keys", "不一致键", "#9C27B0")
         ]
         
-        for key, label, color in stats_items:
+        # 按2x2网格布局添加卡片
+        for i, (key, label, color) in enumerate(stats_items):
             card = self.create_stat_card(label, "0", color)
             self.stats_cards[key] = card
-            stats_layout.addWidget(card)
+            row = i // 2  # 行号：0, 0, 1, 1
+            col = i % 2   # 列号：0, 1, 0, 1
+            stats_layout.addWidget(card, row, col)
             
-        layout.addLayout(stats_layout)
+        # 设置列拉伸
+        stats_layout.setColumnStretch(0, 1)
+        stats_layout.setColumnStretch(1, 1)
+        
+        # 将统计卡片容器设置到滚动区域
+        scroll_area.setWidget(stats_container)
+        layout.addWidget(scroll_area)
         
     def create_coverage_widget(self) -> QWidget:
         """创建覆盖率显示组件"""
@@ -112,33 +145,36 @@ class StatsWidget(QWidget):
                 background-color: white;
                 border: 1px solid #E0E0E0;
                 border-radius: 8px;
-                padding: 10px;
+                padding: 8px;
+                margin: 2px;
             }}
         """)
-        
+        widget.setMinimumHeight(120)
+        widget.setMaximumHeight(140)
+
         layout = QHBoxLayout(widget)
         
         # 彩色指示器
         indicator = QFrame()
-        indicator.setFixedSize(4, 40)
-        indicator.setStyleSheet(f"background-color: {color}; border-radius: 2px;")
+        indicator.setFixedSize(3, 30)
+        indicator.setStyleSheet(f"background-color: {color}; border-radius: 1px;")
         layout.addWidget(indicator)
         
         # 文字信息
         text_layout = QVBoxLayout()
         
         value_label = QLabel(value)
-        value_label.setStyleSheet(f"color: {color}; font-size: 24px; font-weight: bold;")
+        value_label.setStyleSheet(f"color: {color}; font-size: 20px; font-weight: bold;")
         
         label_widget = QLabel(label)
-        label_widget.setStyleSheet("color: #666; font-size: 12px;")
+        label_widget.setStyleSheet("color: #666; font-size: 11px;")
         
         text_layout.addWidget(value_label)
         text_layout.addWidget(label_widget)
-        text_layout.setSpacing(0)
+        text_layout.setSpacing(2)
         
         layout.addLayout(text_layout)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setContentsMargins(8, 8, 8, 8)
         
         # 保存引用以便更新
         widget.value_label = value_label
@@ -338,6 +374,7 @@ class ResultWidget(QWidget):
                 background-color: white;
                 alternate-background-color: #F5F5F5;
                 selection-background-color: #E3F2FD;
+                selection-color: #000000;
             }
             QTableWidget::item {
                 padding: 8px;

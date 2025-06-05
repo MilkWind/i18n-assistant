@@ -25,6 +25,8 @@ class ConfigWidget(QWidget):
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.config_manager = ConfigManager()
+        # 启动时尝试加载默认配置文件，失败不报错
+        self.config_manager.load_config()
         self.config = self.config_manager.get_config()
         self.setup_ui()
         self.load_config()

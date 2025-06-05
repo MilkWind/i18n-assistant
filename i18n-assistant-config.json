@@ -1,6 +1,6 @@
 {
-  "project_path": "D:/development/app-projects/questions-party/questions-party-frontend",
-  "i18n_path": "D:/development/app-projects/questions-party/questions-party-frontend/src/locales",
+  "project_path": "D:/development/app-projects/questions-party/questions-party-backend",
+  "i18n_path": "D:/development/app-projects/questions-party/questions-party-backend/src/locales",
   "output_path": "./i18n-analysis",
   "ignore_patterns": [
     "node_modules/**",
@@ -13,11 +13,11 @@
     ".venv/**"
   ],
   "i18n_patterns": [
-    "(?<!\\$)t\\([\\'\"`](.*?)[\\'\"`]\\)",
-    "\\$t\\([\\'\"`](.*?)[\\'\"`]\\)",
-    "i18n\\.t\\([\\'\"`](.*?)[\\'\"`]\\)",
-    "(?<![\\w])_\\([\\'\"`](.*?)[\\'\"`]\\)",
-    "gettext\\([\\'\"`](.*?)[\\'\"`]\\)"
+    "(?<!\\$)t\\(['\"`](.*?)['\"`]\\)",
+    "\\$t\\(['\"`](.*?)['\"`]\\)",
+    "i18n\\.t\\(['\"`](.*?)['\"`]\\)",
+    "(?<![\\w])_\\(['\"`](.*?)['\"`]\\)",
+    "gettext\\(['\"`](.*?)['\"`]\\)"
   ],
   "file_extensions": [
     ".js",

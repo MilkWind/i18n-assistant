@@ -161,9 +161,6 @@ class WelcomeWidget(QWidget):
                     padding: 5px;
                     min-width: 400px;
                 }
-                QWidget:hover {
-                    background-color: #F0F8FF;
-                }
             """)
             feature_layout = QHBoxLayout(feature_widget)
             feature_layout.setContentsMargins(15, 10, 15, 10)

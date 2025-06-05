@@ -5,7 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a946200e-d548-4bf9-9e54-0bee78d0a1d7" name="Changes" comment="refactor: 添加phases_record到忽略列表">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/WELCOME_PAGE_ENHANCEMENT.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/i18n-assistant-config.json" beforeDir="false" afterPath="$PROJECT_DIR$/i18n-assistant-config.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui/main_window.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui/main_window.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui/widgets/config_widget.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui/widgets/config_widget.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/gui/widgets/result_widget.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/gui/widgets/result_widget.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,6 +50,11 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\development\development-projects\pycharm\i18n-assistant\phases_record" />
+    </key>
+  </component>
   <component name="RunManager" selected="Python.gui_app">
     <configuration name="gui_app" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="i18n-assistant" />
@@ -115,7 +125,7 @@
       <option name="presentableId" value="Default" />
       <updated>1749050160994</updated>
       <workItem from="1749050162049" duration="2554000" />
-      <workItem from="1749094995793" duration="8092000" />
+      <workItem from="1749094995793" duration="10360000" />
     </task>
     <task id="LOCAL-00001" summary="feat: 初始化项目结构并添加设计文档和依赖配置">
       <option name="closed" value="true" />
@@ -165,7 +175,15 @@
       <option name="project" value="LOCAL" />
       <updated>1749111757825</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="refactor: 添加phases_record到忽略列表">
+      <option name="closed" value="true" />
+      <created>1749111990320</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1749111990320</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -193,6 +211,6 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/i18n_assistant$main.coverage" NAME="main Coverage Results" MODIFIED="1749064225689" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/i18n_assistant$gui_app.coverage" NAME="gui_app Coverage Results" MODIFIED="1749111600887" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/i18n_assistant$gui_app.coverage" NAME="gui_app Coverage Results" MODIFIED="1749113904589" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
