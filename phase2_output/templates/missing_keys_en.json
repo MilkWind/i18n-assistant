@@ -1,0 +1,12 @@
+{
+  "errors": {
+    "network": {
+      "connection": "TODO: Add translation for 'errors.network.connection'"
+    }
+  },
+  "messages": {
+    "info": {
+      "saved": "TODO: Add translation for 'messages.info.saved'"
+    }
+  }
+}

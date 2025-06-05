@@ -1,0 +1,69 @@
+============================================================
+国际化分析报告
+============================================================
+生成时间: 2025-06-05 12:22:26
+项目路径: ./test_i18n
+国际化目录: ./test_i18n
+输出目录: ./phase2_output
+
+============================================================
+1. 概览统计
+============================================================
+总使用键数: 0
+总定义键数: 17
+匹配键数: 0
+覆盖率: 0.00%
+缺失键数: 0
+未使用键数: 17
+不一致键数: 2
+
+============================================================
+2. 缺失的国际化文本
+============================================================
+✅ 没有发现缺失的国际化文本！
+
+
+============================================================
+3. 未使用的国际化文本
+============================================================
+
+文件: ./test_i18n\en.json
+----------------------------------------
+  'navigation.about': About
+  'errors.validation.required': This field is required
+  'common.hello': Hello
+  'auth.register.confirm_password': Confirm Password
+  'errors.validation.email': Please enter a valid email
+  'navigation.contact': Contact
+  'navigation.home': Home
+  'common.welcome': Welcome
+  'common.goodbye': Goodbye
+  'auth.login.submit': Sign In
+  'auth.login.title': Login
+  'errors.404': Page not found
+  'auth.register.email': Email Address
+  'errors.500': Internal server error
+  'auth.register.title': Register
+  'auth.login.username': Username
+  'auth.login.password': Password
+
+============================================================
+4. 不一致的国际化字段
+============================================================
+
+键: 'auth.register.confirm_password'
+  存在于: ./test_i18n\en.json
+  缺失于: ./test_i18n\zh.json
+
+键: 'errors.validation.email'
+  存在于: ./test_i18n\en.json
+  缺失于: ./test_i18n\zh.json
+
+============================================================
+6. 分析建议
+============================================================
+• 发现 17 个未使用的国际化键，可以考虑删除以减少文件大小
+• 已生成优化后的i18n文件，移除了未使用的键
+• 发现 2 个不一致的国际化键
+• 建议保持所有语言文件的键结构一致
+• 当前覆盖率较低，建议优先处理缺失的键

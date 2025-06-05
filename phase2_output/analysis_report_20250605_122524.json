@@ -1,0 +1,125 @@
+{
+  "timestamp": "2025-06-05T12:25:24.798175",
+  "config": {
+    "project_path": "./test_i18n",
+    "i18n_path": "./test_i18n",
+    "output_path": "./phase2_output"
+  },
+  "statistics": {
+    "total_used_keys": 12,
+    "total_defined_keys": 17,
+    "matched_keys": 10,
+    "coverage_percentage": 83.33,
+    "missing_keys_count": 4,
+    "unused_keys_count": 7,
+    "inconsistent_keys_count": 2
+  },
+  "missing_keys": [
+    {
+      "key": "errors.network.connection",
+      "file_path": "D:\\development\\development-projects\\pycharm\\i18n-assistant\\test_i18n\\components.vue",
+      "line_number": 20,
+      "column_number": 38,
+      "suggested_files": [
+        "./test_i18n\\en.json",
+        "./test_i18n\\zh.json"
+      ]
+    },
+    {
+      "key": "errors.network.connection",
+      "file_path": "D:\\development\\development-projects\\pycharm\\i18n-assistant\\test_i18n\\components.vue",
+      "line_number": 20,
+      "column_number": 37,
+      "suggested_files": [
+        "./test_i18n\\en.json",
+        "./test_i18n\\zh.json"
+      ]
+    },
+    {
+      "key": "messages.info.saved",
+      "file_path": "D:\\development\\development-projects\\pycharm\\i18n-assistant\\test_i18n\\components.vue",
+      "line_number": 40,
+      "column_number": 32,
+      "suggested_files": [
+        "./test_i18n\\en.json",
+        "./test_i18n\\zh.json"
+      ]
+    },
+    {
+      "key": "messages.info.saved",
+      "file_path": "D:\\development\\development-projects\\pycharm\\i18n-assistant\\test_i18n\\components.vue",
+      "line_number": 40,
+      "column_number": 31,
+      "suggested_files": [
+        "./test_i18n\\en.json",
+        "./test_i18n\\zh.json"
+      ]
+    }
+  ],
+  "unused_keys": [
+    {
+      "key": "errors.500",
+      "i18n_file": "./test_i18n\\en.json",
+      "value": "Internal server error"
+    },
+    {
+      "key": "errors.validation.required",
+      "i18n_file": "./test_i18n\\en.json",
+      "value": "This field is required"
+    },
+    {
+      "key": "errors.validation.email",
+      "i18n_file": "./test_i18n\\en.json",
+      "value": "Please enter a valid email"
+    },
+    {
+      "key": "auth.register.confirm_password",
+      "i18n_file": "./test_i18n\\en.json",
+      "value": "Confirm Password"
+    },
+    {
+      "key": "common.goodbye",
+      "i18n_file": "./test_i18n\\en.json",
+      "value": "Goodbye"
+    },
+    {
+      "key": "auth.register.email",
+      "i18n_file": "./test_i18n\\en.json",
+      "value": "Email Address"
+    },
+    {
+      "key": "auth.register.title",
+      "i18n_file": "./test_i18n\\en.json",
+      "value": "Register"
+    }
+  ],
+  "inconsistent_keys": [
+    {
+      "key": "auth.register.confirm_password",
+      "existing_files": [
+        "./test_i18n\\en.json"
+      ],
+      "missing_files": [
+        "./test_i18n\\zh.json"
+      ]
+    },
+    {
+      "key": "errors.validation.email",
+      "existing_files": [
+        "./test_i18n\\en.json"
+      ],
+      "missing_files": [
+        "./test_i18n\\zh.json"
+      ]
+    }
+  ],
+  "file_coverage": {
+    "D:\\development\\development-projects\\pycharm\\i18n-assistant\\test_i18n\\components.vue": {
+      "file_path": "D:\\development\\development-projects\\pycharm\\i18n-assistant\\test_i18n\\components.vue",
+      "total_calls": 24,
+      "covered_calls": 20,
+      "uncovered_calls": 4,
+      "coverage_percentage": 83.33333333333334
+    }
+  }
+}
