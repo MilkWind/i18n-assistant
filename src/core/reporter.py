@@ -75,7 +75,24 @@ class ReportGenerator:
                 "=" * 60,
             ])
             
-            # 按文件分组显示
+            # 按文件分组显示统计概览
+            missing_keys_by_file = getattr(analysis_result, 'missing_keys_by_file', {})
+            if missing_keys_by_file:
+                report_lines.extend([
+                    "",
+                    "文件统计概览:",
+                    "-" * 30,
+                ])
+                for file_path, missing_list in missing_keys_by_file.items():
+                    report_lines.append(f"  {file_path}: {len(missing_list)} 个缺失键")
+            
+            report_lines.extend([
+                "",
+                "详细列表:",
+                "-" * 30,
+            ])
+            
+            # 按文件分组显示详细信息
             missing_by_file = {}
             for missing in analysis_result.missing_keys:
                 if missing.file_path not in missing_by_file:
@@ -183,10 +200,22 @@ class ReportGenerator:
                 report_lines.extend([
                     f"\n文件: {file_path}",
                     f"  总调用数: {coverage.total_calls}",
-                    f"  已覆盖: {coverage.covered_calls}",
-                    f"  未覆盖: {coverage.uncovered_calls}",
-                    f"  覆盖率: {coverage.coverage_percentage:.2f}%",
+                    f"  总体已覆盖: {coverage.covered_calls}",
+                    f"  总体未覆盖: {coverage.uncovered_calls}",
+                    f"  总体覆盖率: {coverage.coverage_percentage:.2f}%",
                 ])
+                
+                # 添加各国际化文件中的覆盖情况
+                i18n_coverages = getattr(coverage, 'i18n_coverages', {})
+                if i18n_coverages:
+                    report_lines.append("  各国际化文件中的覆盖情况:")
+                    for i18n_file, i18n_coverage in i18n_coverages.items():
+                        report_lines.extend([
+                            f"    {i18n_file}:",
+                            f"      覆盖调用数: {i18n_coverage.covered_calls}",
+                            f"      未覆盖调用数: {i18n_coverage.uncovered_calls}",
+                            f"      覆盖率: {i18n_coverage.coverage_percentage:.2f}%"
+                        ])
         
         # 分析建议
         report_lines.extend([
@@ -258,6 +287,11 @@ class ReportGenerator:
                 'inconsistent_keys_count': len(analysis_result.inconsistent_keys)
             },
             'missing_keys': [asdict(mk) for mk in analysis_result.missing_keys],
+            'missing_keys_by_file': {
+                file_path: [asdict(mk) for mk in missing_list]
+                for file_path, missing_list in getattr(analysis_result, 'missing_keys_by_file', {}).items()
+            },
+            'missing_keys_summary_by_file': getattr(analysis_result, 'get_missing_keys_summary_by_file', lambda: {})(),
             'unused_keys': [asdict(uk) for uk in analysis_result.unused_keys],
             'unused_keys_by_file': {
                 file_path: [asdict(uk) for uk in unused_list]

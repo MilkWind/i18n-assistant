@@ -39,6 +39,17 @@ class InconsistentKey:
 
 
 @dataclass
+class I18nFileCoverage:
+    """单个国际化文件的覆盖情况"""
+    i18n_file: str
+    covered_calls: int
+    uncovered_calls: int
+    coverage_percentage: float
+    covered_keys: List[str] = field(default_factory=list)
+    missing_keys: List[str] = field(default_factory=list)
+
+
+@dataclass
 class FileCoverage:
     """文件覆盖情况"""
     file_path: str
@@ -47,6 +58,8 @@ class FileCoverage:
     uncovered_calls: int
     coverage_percentage: float
     missing_keys_count: int = 0
+    # 在各个国际化文件中的覆盖情况
+    i18n_coverages: Dict[str, I18nFileCoverage] = field(default_factory=dict)
 
 
 @dataclass
@@ -79,6 +92,8 @@ class AnalysisResult:
     
     # 按文件统计未使用键
     unused_keys_by_file: Dict[str, List[UnusedKey]] = field(default_factory=dict)
+    # 按文件统计缺失键
+    missing_keys_by_file: Dict[str, List[MissingKey]] = field(default_factory=dict)
     
     @property
     def coverage_stats(self) -> CoverageStats:
@@ -103,6 +118,10 @@ class AnalysisResult:
     def get_unused_keys_summary_by_file(self) -> Dict[str, int]:
         """获取按文件统计的未使用键摘要"""
         return {file_path: len(unused_list) for file_path, unused_list in self.unused_keys_by_file.items()}
+    
+    def get_missing_keys_summary_by_file(self) -> Dict[str, int]:
+        """获取按文件统计的缺失键摘要"""
+        return {file_path: len(missing_list) for file_path, missing_list in self.missing_keys_by_file.items()}
 
 
 class AnalysisEngine:
@@ -197,6 +216,9 @@ class AnalysisEngine:
             used_keys, defined_keys, used_keys_detail, parse_result
         )
         
+        # 设置按文件分组的缺失键
+        result.missing_keys_by_file = getattr(self, '_missing_keys_by_file', {})
+        
         # 2. 分析未使用的键
         result.unused_keys = self._analyze_unused_keys(
             used_keys, defined_keys, parse_result
@@ -210,7 +232,7 @@ class AnalysisEngine:
         
         # 4. 分析文件覆盖情况
         result.file_coverage = self._analyze_file_coverage(
-            scan_result, defined_keys
+            scan_result, defined_keys, parse_result
         )
         
         # 5. 计算统计信息
@@ -294,6 +316,9 @@ class AnalysisEngine:
         missing_keys = []
         missing_key_names = used_keys - defined_keys
         
+        # 用于按文件统计缺失键
+        missing_keys_by_file = defaultdict(list)
+        
         for key in missing_key_names:
             calls = used_keys_detail[key]
             for call in calls:
@@ -308,6 +333,12 @@ class AnalysisEngine:
                     suggested_files=suggested_files
                 )
                 missing_keys.append(missing_key)
+                
+                # 按文件分组统计
+                missing_keys_by_file[call.file_path].append(missing_key)
+        
+        # 将按文件分组的结果存储，供后续使用
+        self._missing_keys_by_file = dict(missing_keys_by_file)
         
         return missing_keys
     
@@ -400,7 +431,8 @@ class AnalysisEngine:
     def _analyze_file_coverage(
         self, 
         scan_result, 
-        defined_keys: Set[str]
+        defined_keys: Set[str],
+        parse_result=None
     ) -> Dict[str, FileCoverage]:
         """分析文件覆盖情况"""
         file_coverage = {}
@@ -410,6 +442,11 @@ class AnalysisEngine:
             i18n_calls = scan_result.i18n_calls
         else:
             i18n_calls = []
+        
+        # 获取国际化文件信息
+        i18n_files_keys = {}
+        if parse_result and hasattr(parse_result, 'keys_by_file'):
+            i18n_files_keys = parse_result.keys_by_file
         
         # 按文件统计i18n调用
         calls_by_file = defaultdict(list)
@@ -423,13 +460,39 @@ class AnalysisEngine:
             missing_keys_count = uncovered_calls  # Missing keys count equals uncovered calls
             coverage_percentage = (covered_calls / total_calls * 100) if total_calls > 0 else 0
             
+            # 分析在各个国际化文件中的覆盖情况
+            i18n_coverages = {}
+            if i18n_files_keys:
+                # 获取该文件中使用的所有键
+                used_keys_in_file = {call.key for call in calls}
+                
+                for i18n_file, i18n_keys in i18n_files_keys.items():
+                    # 计算在该国际化文件中的覆盖情况
+                    covered_keys = used_keys_in_file & i18n_keys
+                    missing_keys = used_keys_in_file - i18n_keys
+                    
+                    i18n_covered_calls = len(covered_keys)
+                    i18n_uncovered_calls = len(missing_keys)
+                    i18n_coverage_percentage = (i18n_covered_calls / total_calls * 100) if total_calls > 0 else 0
+                    
+                    i18n_coverage = I18nFileCoverage(
+                        i18n_file=i18n_file,
+                        covered_calls=i18n_covered_calls,
+                        uncovered_calls=i18n_uncovered_calls,
+                        coverage_percentage=i18n_coverage_percentage,
+                        covered_keys=list(covered_keys),
+                        missing_keys=list(missing_keys)
+                    )
+                    i18n_coverages[i18n_file] = i18n_coverage
+            
             coverage = FileCoverage(
                 file_path=file_path,
                 total_calls=total_calls,
                 covered_calls=covered_calls,
                 uncovered_calls=uncovered_calls,
                 coverage_percentage=coverage_percentage,
-                missing_keys_count=missing_keys_count
+                missing_keys_count=missing_keys_count,
+                i18n_coverages=i18n_coverages
             )
             file_coverage[file_path] = coverage
         

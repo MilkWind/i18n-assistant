@@ -299,6 +299,34 @@ class ResultWidget(QWidget):
         desc_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 10px;")
         layout.addWidget(desc_label)
 
+        # 创建垂直分割器
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        
+        # 文件统计概览
+        summary_widget = QWidget()
+        summary_layout = QVBoxLayout(summary_widget)
+        
+        summary_title = QLabel("按文件统计:")
+        summary_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        summary_layout.addWidget(summary_title)
+        
+        self.missing_summary_table = QTableWidget()
+        self.missing_summary_table.setColumnCount(2)
+        self.missing_summary_table.setHorizontalHeaderLabels(["文件", "缺失键数"])
+        self.missing_summary_table.setMaximumHeight(150)
+        self.setup_table_style(self.missing_summary_table)
+        summary_layout.addWidget(self.missing_summary_table)
+        
+        splitter.addWidget(summary_widget)
+
+        # 详细键列表
+        detail_widget = QWidget()
+        detail_layout = QVBoxLayout(detail_widget)
+        
+        detail_title = QLabel("详细列表:")
+        detail_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        detail_layout.addWidget(detail_title)
+
         # 表格
         self.missing_table = QTableWidget()
         self.missing_table.setColumnCount(4)
@@ -310,7 +338,16 @@ class ResultWidget(QWidget):
         # 双击打开文件
         self.missing_table.itemDoubleClicked.connect(self.on_missing_item_double_clicked)
 
-        layout.addWidget(self.missing_table)
+        detail_layout.addWidget(self.missing_table)
+        
+        splitter.addWidget(detail_widget)
+        
+        # 设置分割器属性
+        splitter.setStretchFactor(0, 0)  # 统计概览不拉伸
+        splitter.setStretchFactor(1, 1)  # 详细列表可拉伸
+        splitter.setSizes([150, 300])  # 设置初始大小比例
+        
+        layout.addWidget(splitter)
 
         return widget
 
@@ -400,17 +437,51 @@ class ResultWidget(QWidget):
         desc_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 10px;")
         layout.addWidget(desc_label)
 
-        # 表格
+        # 创建垂直分割器
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        
+        # 总体覆盖率概览
+        overview_widget = QWidget()
+        overview_layout = QVBoxLayout(overview_widget)
+        
+        overview_title = QLabel("总体覆盖率:")
+        overview_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        overview_layout.addWidget(overview_title)
+
+        # 总体覆盖率表格
         self.coverage_table = QTableWidget()
         self.coverage_table.setColumnCount(5)
         self.coverage_table.setHorizontalHeaderLabels(["文件", "总调用数", "覆盖调用数", "覆盖率", "状态"])
-
+        self.coverage_table.setMaximumHeight(200)
         self.setup_table_style(self.coverage_table)
-
-        # 双击打开文件
         self.coverage_table.itemDoubleClicked.connect(self.on_coverage_item_double_clicked)
+        overview_layout.addWidget(self.coverage_table)
+        
+        splitter.addWidget(overview_widget)
 
-        layout.addWidget(self.coverage_table)
+        # 按国际化文件的详细覆盖率
+        detail_widget = QWidget()
+        detail_layout = QVBoxLayout(detail_widget)
+        
+        detail_title = QLabel("各国际化文件中的覆盖率:")
+        detail_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        detail_layout.addWidget(detail_title)
+
+        # 详细覆盖率表格
+        self.i18n_coverage_table = QTableWidget()
+        self.i18n_coverage_table.setColumnCount(6)
+        self.i18n_coverage_table.setHorizontalHeaderLabels(["源文件", "国际化文件", "总调用数", "覆盖调用数", "覆盖率", "状态"])
+        self.setup_table_style(self.i18n_coverage_table)
+        detail_layout.addWidget(self.i18n_coverage_table)
+        
+        splitter.addWidget(detail_widget)
+        
+        # 设置分割器属性
+        splitter.setStretchFactor(0, 0)  # 总体概览不拉伸
+        splitter.setStretchFactor(1, 1)  # 详细列表可拉伸
+        splitter.setSizes([200, 400])  # 设置初始大小比例
+        
+        layout.addWidget(splitter)
 
         return widget
 
@@ -458,10 +529,12 @@ class ResultWidget(QWidget):
 
         # 更新表格
         self.update_missing_keys_table(analysis_result.missing_keys)
+        self.update_missing_keys_summary_table(getattr(analysis_result, 'missing_keys_by_file', {}))
         self.update_unused_keys_table(analysis_result.unused_keys)
         self.update_unused_keys_summary_table(getattr(analysis_result, 'unused_keys_by_file', {}))
         self.update_inconsistent_keys_table(analysis_result.inconsistent_keys)
         self.update_coverage_table(analysis_result.file_coverage)
+        self.update_i18n_coverage_table(analysis_result.file_coverage)
 
         # 启用按钮
         self.set_buttons_enabled(True)
@@ -526,6 +599,21 @@ class ResultWidget(QWidget):
         except Exception as e:
             print(f"Error updating unused keys table: {e}")
             QMessageBox.warning(self, "警告", f"更新未使用键表格时发生错误: {str(e)}")
+
+    def update_missing_keys_summary_table(self, missing_keys_by_file: Dict) -> None:
+        """更新缺失键摘要表格"""
+        try:
+            self.missing_summary_table.setRowCount(len(missing_keys_by_file))
+
+            for i, (file_path, missing_keys) in enumerate(missing_keys_by_file.items()):
+                self.missing_summary_table.setItem(i, 0, QTableWidgetItem(str(file_path)))
+                self.missing_summary_table.setItem(i, 1, QTableWidgetItem(str(len(missing_keys))))
+
+            self.missing_summary_table.resizeColumnsToContents()
+
+        except Exception as e:
+            print(f"Error updating missing keys summary table: {e}")
+            QMessageBox.warning(self, "警告", f"更新缺失键摘要表格时发生错误: {str(e)}")
 
     def update_unused_keys_summary_table(self, unused_keys_by_file: Dict) -> None:
         """更新未使用键摘要表格"""
@@ -612,6 +700,74 @@ class ResultWidget(QWidget):
         except Exception as e:
             print(f"Error updating coverage table: {e}")
             QMessageBox.warning(self, "警告", f"更新文件覆盖率表格时发生错误: {str(e)}")
+
+    def update_i18n_coverage_table(self, file_coverage: Dict) -> None:
+        """更新国际化文件覆盖率详细表格"""
+        try:
+            # 计算总行数
+            total_rows = 0
+            for coverage in file_coverage.values():
+                i18n_coverages = getattr(coverage, 'i18n_coverages', {})
+                total_rows += len(i18n_coverages)
+            
+            self.i18n_coverage_table.setRowCount(total_rows)
+            
+            current_row = 0
+            for file_path, coverage in file_coverage.items():
+                # 安全获取属性
+                total_calls = getattr(coverage, 'total_calls', 0)
+                i18n_coverages = getattr(coverage, 'i18n_coverages', {})
+                
+                for i18n_file, i18n_coverage in i18n_coverages.items():
+                    # 源文件
+                    self.i18n_coverage_table.setItem(current_row, 0, QTableWidgetItem(str(file_path)))
+                    
+                    # 国际化文件
+                    self.i18n_coverage_table.setItem(current_row, 1, QTableWidgetItem(str(i18n_file)))
+                    
+                    # 总调用数
+                    self.i18n_coverage_table.setItem(current_row, 2, QTableWidgetItem(str(total_calls)))
+                    
+                    # 覆盖调用数
+                    covered_calls = getattr(i18n_coverage, 'covered_calls', 0)
+                    self.i18n_coverage_table.setItem(current_row, 3, QTableWidgetItem(str(covered_calls)))
+                    
+                    # 覆盖率
+                    coverage_percentage = getattr(i18n_coverage, 'coverage_percentage', 0.0)
+                    coverage_item = QTableWidgetItem(f"{coverage_percentage:.1f}%")
+                    if coverage_percentage >= 80:
+                        coverage_item.setBackground(QColor("#E8F5E8"))
+                    elif coverage_percentage >= 60:
+                        coverage_item.setBackground(QColor("#FFF3E0"))
+                    else:
+                        coverage_item.setBackground(QColor("#FFEBEE"))
+                    self.i18n_coverage_table.setItem(current_row, 4, coverage_item)
+                    
+                    # 状态
+                    if coverage_percentage == 100:
+                        status = "完美"
+                        color = "#4CAF50"
+                    elif coverage_percentage >= 80:
+                        status = "良好"
+                        color = "#8BC34A"
+                    elif coverage_percentage >= 60:
+                        status = "一般"
+                        color = "#FF9800"
+                    else:
+                        status = "需要改进"
+                        color = "#F44336"
+                    
+                    status_item = QTableWidgetItem(status)
+                    status_item.setForeground(QColor(color))
+                    self.i18n_coverage_table.setItem(current_row, 5, status_item)
+                    
+                    current_row += 1
+            
+            self.i18n_coverage_table.resizeColumnsToContents()
+            
+        except Exception as e:
+            print(f"Error updating i18n coverage table: {e}")
+            QMessageBox.warning(self, "警告", f"更新国际化文件覆盖率表格时发生错误: {str(e)}")
 
     def on_missing_item_double_clicked(self, item: QTableWidgetItem) -> None:
         """处理缺失键项目双击"""
@@ -717,6 +873,12 @@ class ResultWidget(QWidget):
         self.unused_table.setRowCount(0)
         self.inconsistent_table.setRowCount(0)
         self.coverage_table.setRowCount(0)
+        if hasattr(self, 'missing_summary_table'):
+            self.missing_summary_table.setRowCount(0)
+        if hasattr(self, 'unused_summary_table'):
+            self.unused_summary_table.setRowCount(0)
+        if hasattr(self, 'i18n_coverage_table'):
+            self.i18n_coverage_table.setRowCount(0)
 
         # 重置统计信息
         self.stats_widget.coverage_value = 0.0
