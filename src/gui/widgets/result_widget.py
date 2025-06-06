@@ -324,14 +324,48 @@ class ResultWidget(QWidget):
         desc_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 10px;")
         layout.addWidget(desc_label)
 
-        # 表格
+        # 创建垂直分割器
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        
+        # 文件统计概览
+        summary_widget = QWidget()
+        summary_layout = QVBoxLayout(summary_widget)
+        
+        summary_title = QLabel("按文件统计:")
+        summary_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        summary_layout.addWidget(summary_title)
+        
+        self.unused_summary_table = QTableWidget()
+        self.unused_summary_table.setColumnCount(2)
+        self.unused_summary_table.setHorizontalHeaderLabels(["文件", "未使用键数"])
+        self.unused_summary_table.setMaximumHeight(150)
+        self.setup_table_style(self.unused_summary_table)
+        summary_layout.addWidget(self.unused_summary_table)
+        
+        splitter.addWidget(summary_widget)
+
+        # 详细键列表
+        detail_widget = QWidget()
+        detail_layout = QVBoxLayout(detail_widget)
+        
+        detail_title = QLabel("详细列表:")
+        detail_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        detail_layout.addWidget(detail_title)
+        
         self.unused_table = QTableWidget()
         self.unused_table.setColumnCount(3)
         self.unused_table.setHorizontalHeaderLabels(["键名", "文件", "值"])
-
         self.setup_table_style(self.unused_table)
-
-        layout.addWidget(self.unused_table)
+        detail_layout.addWidget(self.unused_table)
+        
+        splitter.addWidget(detail_widget)
+        
+        # 设置分割器属性
+        splitter.setStretchFactor(0, 0)  # 统计概览不拉伸
+        splitter.setStretchFactor(1, 1)  # 详细列表可拉伸
+        splitter.setSizes([150, 300])  # 设置初始大小比例
+        
+        layout.addWidget(splitter)
 
         return widget
 
@@ -422,9 +456,10 @@ class ResultWidget(QWidget):
         # 更新统计信息
         self.stats_widget.update_stats(analysis_result)
 
-        # 更新各个表格
+        # 更新表格
         self.update_missing_keys_table(analysis_result.missing_keys)
         self.update_unused_keys_table(analysis_result.unused_keys)
+        self.update_unused_keys_summary_table(getattr(analysis_result, 'unused_keys_by_file', {}))
         self.update_inconsistent_keys_table(analysis_result.inconsistent_keys)
         self.update_coverage_table(analysis_result.file_coverage)
 
@@ -491,6 +526,21 @@ class ResultWidget(QWidget):
         except Exception as e:
             print(f"Error updating unused keys table: {e}")
             QMessageBox.warning(self, "警告", f"更新未使用键表格时发生错误: {str(e)}")
+
+    def update_unused_keys_summary_table(self, unused_keys_by_file: Dict) -> None:
+        """更新未使用键摘要表格"""
+        try:
+            self.unused_summary_table.setRowCount(len(unused_keys_by_file))
+
+            for i, (file_path, unused_keys) in enumerate(unused_keys_by_file.items()):
+                self.unused_summary_table.setItem(i, 0, QTableWidgetItem(str(file_path)))
+                self.unused_summary_table.setItem(i, 1, QTableWidgetItem(str(len(unused_keys))))
+
+            self.unused_summary_table.resizeColumnsToContents()
+
+        except Exception as e:
+            print(f"Error updating unused keys summary table: {e}")
+            QMessageBox.warning(self, "警告", f"更新未使用键摘要表格时发生错误: {str(e)}")
 
     def update_inconsistent_keys_table(self, inconsistent_keys: List) -> None:
         """更新不一致键表格"""

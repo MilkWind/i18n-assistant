@@ -77,6 +77,9 @@ class AnalysisResult:
     keys_by_file: Dict[str, Set[str]] = field(default_factory=dict)
     used_keys_detail: Dict[str, List[I18nCall]] = field(default_factory=dict)
     
+    # 按文件统计未使用键
+    unused_keys_by_file: Dict[str, List[UnusedKey]] = field(default_factory=dict)
+    
     @property
     def coverage_stats(self) -> CoverageStats:
         """获取覆盖率统计"""
@@ -96,6 +99,10 @@ class AnalysisResult:
             'inconsistent_keys_count': len(self.inconsistent_keys),
             'total_issues': len(self.missing_keys) + len(self.unused_keys) + len(self.inconsistent_keys)
         }
+    
+    def get_unused_keys_summary_by_file(self) -> Dict[str, int]:
+        """获取按文件统计的未使用键摘要"""
+        return {file_path: len(unused_list) for file_path, unused_list in self.unused_keys_by_file.items()}
 
 
 class AnalysisEngine:
@@ -194,6 +201,9 @@ class AnalysisEngine:
         result.unused_keys = self._analyze_unused_keys(
             used_keys, defined_keys, parse_result
         )
+        
+        # 设置按文件分组的未使用键
+        result.unused_keys_by_file = getattr(self, '_unused_keys_by_file', {})
         
         # 3. 分析不一致的键
         result.inconsistent_keys = self._analyze_inconsistent_keys(parse_result)
@@ -319,17 +329,30 @@ class AnalysisEngine:
             keys_by_file = {}
             all_keys = {}
         
-        for key in unused_key_names:
-            # 找到定义这个键的文件
-            for file_path, keys_data in keys_by_file.items():
-                if key in keys_data:
+        # 用于按文件统计未使用键
+        unused_keys_by_file = {}
+        
+        # 遍历每个文件，找出每个文件中的未使用键
+        for file_path, keys_data in keys_by_file.items():
+            file_unused_keys = []
+            
+            # 找出此文件中的未使用键
+            for key in keys_data:
+                if key in unused_key_names:
                     unused_key = UnusedKey(
                         key=key,
                         i18n_file=file_path,
                         value=all_keys.get(key)
                     )
                     unused_keys.append(unused_key)
-                    break
+                    file_unused_keys.append(unused_key)
+            
+            # 只有当文件有未使用键时才添加到统计中
+            if file_unused_keys:
+                unused_keys_by_file[file_path] = file_unused_keys
+        
+        # 将按文件分组的结果存储到result中
+        self._unused_keys_by_file = unused_keys_by_file
         
         return unused_keys
     

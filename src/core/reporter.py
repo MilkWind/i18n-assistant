@@ -108,7 +108,24 @@ class ReportGenerator:
                 "=" * 60,
             ])
             
-            # 按文件分组显示
+            # 按文件分组显示统计概览
+            unused_keys_by_file = getattr(analysis_result, 'unused_keys_by_file', {})
+            if unused_keys_by_file:
+                report_lines.extend([
+                    "",
+                    "文件统计概览:",
+                    "-" * 30,
+                ])
+                for file_path, unused_list in unused_keys_by_file.items():
+                    report_lines.append(f"  {file_path}: {len(unused_list)} 个未使用键")
+            
+            report_lines.extend([
+                "",
+                "详细列表:",
+                "-" * 30,
+            ])
+            
+            # 按文件分组显示详细信息
             unused_by_file = {}
             for unused in analysis_result.unused_keys:
                 if unused.i18n_file not in unused_by_file:
@@ -242,6 +259,11 @@ class ReportGenerator:
             },
             'missing_keys': [asdict(mk) for mk in analysis_result.missing_keys],
             'unused_keys': [asdict(uk) for uk in analysis_result.unused_keys],
+            'unused_keys_by_file': {
+                file_path: [asdict(uk) for uk in unused_list]
+                for file_path, unused_list in getattr(analysis_result, 'unused_keys_by_file', {}).items()
+            },
+            'unused_keys_summary_by_file': getattr(analysis_result, 'get_unused_keys_summary_by_file', lambda: {})(),
             'inconsistent_keys': [asdict(ik) for ik in analysis_result.inconsistent_keys],
             'file_coverage': {
                 file_path: asdict(coverage) 
@@ -422,7 +444,19 @@ class ReportGenerator:
             f"❌ 缺失键: {len(analysis_result.missing_keys)}",
             f"🗑️ 未使用键: {len(analysis_result.unused_keys)}",
             f"⚠️ 不一致键: {len(analysis_result.inconsistent_keys)}",
-            "=" * 40
         ]
+        
+        # 添加按文件统计的未使用键摘要
+        unused_keys_by_file = getattr(analysis_result, 'unused_keys_by_file', {})
+        if unused_keys_by_file:
+            summary_lines.extend([
+                "",
+                "📂 未使用键按文件统计:",
+            ])
+            for file_path, unused_list in unused_keys_by_file.items():
+                file_name = file_path.split('/')[-1] if '/' in file_path else file_path.split('\\')[-1]
+                summary_lines.append(f"   {file_name}: {len(unused_list)} 个")
+        
+        summary_lines.append("=" * 40)
         
         return "\n".join(summary_lines) 
