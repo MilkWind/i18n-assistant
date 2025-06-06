@@ -210,15 +210,13 @@ class ResultWidget(QWidget):
         """设置用户界面"""
         layout = QVBoxLayout(self)
         
+        # 创建垂直分割器
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        layout.addWidget(splitter)
+        
         # 统计信息区域
         self.stats_widget = StatsWidget()
-        layout.addWidget(self.stats_widget)
-        
-        # 分隔线
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
-        line.setFrameShadow(QFrame.Shadow.Sunken)
-        layout.addWidget(line)
+        splitter.addWidget(self.stats_widget)
         
         # 详细结果标签页
         self.tab_widget = QTabWidget()
@@ -239,7 +237,28 @@ class ResultWidget(QWidget):
         self.coverage_tab = self.create_coverage_tab()
         self.tab_widget.addTab(self.coverage_tab, "文件覆盖率")
         
-        layout.addWidget(self.tab_widget)
+        splitter.addWidget(self.tab_widget)
+        
+        # 设置分割器属性
+        splitter.setStretchFactor(0, 0)  # 统计信息区域不拉伸
+        splitter.setStretchFactor(1, 1)  # 详细结果区域可拉伸
+        splitter.setSizes([200, 400])    # 设置初始大小比例
+        
+        # 设置分割器样式，让分割线更明显
+        splitter.setStyleSheet("""
+            QSplitter::handle {
+                background-color: #E0E0E0;
+                border: 1px solid #CCCCCC;
+                height: 3px;
+                margin: 1px 0px;
+            }
+            QSplitter::handle:hover {
+                background-color: #2196F3;
+            }
+            QSplitter::handle:pressed {
+                background-color: #1976D2;
+            }
+        """)
         
         # 操作按钮
         button_layout = QHBoxLayout()
@@ -518,7 +537,15 @@ class ResultWidget(QWidget):
             
         try:
             reports = self.analysis_results['reports']
-            json_content = reports['json']
+            json_report_path = reports['json']
+            
+            # 读取JSON报告文件内容
+            if os.path.exists(json_report_path):
+                with open(json_report_path, 'r', encoding='utf-8') as f:
+                    json_content = f.read()
+            else:
+                QMessageBox.warning(self, "警告", f"JSON报告文件不存在: {json_report_path}")
+                return
             
             file_path, _ = QFileDialog.getSaveFileName(
                 self, "保存JSON报告", "analysis_report.json", "JSON文件 (*.json)"
@@ -539,7 +566,15 @@ class ResultWidget(QWidget):
             
         try:
             reports = self.analysis_results['reports']
-            text_content = reports['text']
+            text_report_path = reports['text']
+            
+            # 读取文本报告文件内容
+            if os.path.exists(text_report_path):
+                with open(text_report_path, 'r', encoding='utf-8') as f:
+                    text_content = f.read()
+            else:
+                QMessageBox.warning(self, "警告", f"文本报告文件不存在: {text_report_path}")
+                return
             
             file_path, _ = QFileDialog.getSaveFileName(
                 self, "保存文本报告", "analysis_report.txt", "文本文件 (*.txt)"
