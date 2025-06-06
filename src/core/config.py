@@ -30,11 +30,11 @@ class Config:
     
     # 国际化调用模式配置
     i18n_patterns: List[str] = field(default_factory=lambda: [
-        r'(?<!\$)t\([\'"`](.*?)[\'"`]\)',  # t() but not $t()
-        r'\$t\([\'"`](.*?)[\'"`]\)',       # $t()
-        r'i18n\.t\([\'"`](.*?)[\'"`]\)',   # i18n.t()
-        r'(?<![\w])_\([\'"`](.*?)[\'"`]\)', # _() but not part of another word
-        r'gettext\([\'"`](.*?)[\'"`]\)'    # gettext()
+        r'(?<![a-zA-Z])t\([\'"`](.*?)[\'"`]\)',  # t() but not preceded by any letter
+        r'\$t\([\'"`](.*?)[\'"`]\)',             # $t()
+        r'i18n\.t\([\'"`](.*?)[\'"`]\)',         # i18n.t()
+        r'(?<![a-zA-Z])_\([\'"`](.*?)[\'"`]\)',  # _() but not preceded by any letter
+        r'gettext\([\'"`](.*?)[\'"`]\)'          # gettext()
     ])
     
     # 文件扩展名配置

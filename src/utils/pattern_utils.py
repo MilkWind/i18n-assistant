@@ -239,9 +239,10 @@ def create_key_pattern(key: str) -> str:
     """
     escaped_key = escape_regex_chars(key)
     patterns = [
-        rf't\([\'"`]{escaped_key}[\'"`]\)',
-        rf'\$t\([\'"`]{escaped_key}[\'"`]\)',
-        rf'i18n\.t\([\'"`]{escaped_key}[\'"`]\)',
-        rf'_\([\'"`]{escaped_key}[\'"`]\)'
+        rf'(?<![a-zA-Z])t\([\'"`]{escaped_key}[\'"`]\)',  # t() but not preceded by any letter
+        rf'\$t\([\'"`]{escaped_key}[\'"`]\)',             # $t()
+        rf'i18n\.t\([\'"`]{escaped_key}[\'"`]\)',         # i18n.t()
+        rf'(?<![a-zA-Z])_\([\'"`]{escaped_key}[\'"`]\)',  # _() but not preceded by any letter
+        rf'gettext\([\'"`]{escaped_key}[\'"`]\)'          # gettext()
     ]
     return '|'.join(patterns) 
