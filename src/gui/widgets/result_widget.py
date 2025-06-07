@@ -305,26 +305,30 @@ class ResultWidget(QWidget):
         # 文件统计概览
         summary_widget = QWidget()
         summary_layout = QVBoxLayout(summary_widget)
+        summary_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
+        summary_layout.setSpacing(5)  # 设置固定间距
         
         summary_title = QLabel("按文件统计:")
-        summary_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        summary_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         summary_layout.addWidget(summary_title)
         
         self.missing_summary_table = QTableWidget()
         self.missing_summary_table.setColumnCount(2)
         self.missing_summary_table.setHorizontalHeaderLabels(["文件", "缺失键数"])
-        self.missing_summary_table.setMaximumHeight(150)
+        self.missing_summary_table.setMinimumHeight(100)  # 设置最小高度而不是最大高度
         self.setup_table_style(self.missing_summary_table)
-        summary_layout.addWidget(self.missing_summary_table)
+        summary_layout.addWidget(self.missing_summary_table, 1)  # 添加拉伸因子
         
         splitter.addWidget(summary_widget)
 
         # 详细键列表
         detail_widget = QWidget()
         detail_layout = QVBoxLayout(detail_widget)
+        detail_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
+        detail_layout.setSpacing(5)  # 设置固定间距
         
         detail_title = QLabel("详细列表:")
-        detail_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        detail_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         detail_layout.addWidget(detail_title)
 
         # 表格
@@ -338,13 +342,13 @@ class ResultWidget(QWidget):
         # 双击打开文件
         self.missing_table.itemDoubleClicked.connect(self.on_missing_item_double_clicked)
 
-        detail_layout.addWidget(self.missing_table)
+        detail_layout.addWidget(self.missing_table, 1)  # 添加拉伸因子
         
         splitter.addWidget(detail_widget)
         
         # 设置分割器属性
-        splitter.setStretchFactor(0, 0)  # 统计概览不拉伸
-        splitter.setStretchFactor(1, 1)  # 详细列表可拉伸
+        splitter.setStretchFactor(0, 1)  # 统计概览可适度拉伸
+        splitter.setStretchFactor(1, 2)  # 详细列表可拉伸更多
         splitter.setSizes([150, 300])  # 设置初始大小比例
         
         layout.addWidget(splitter)
@@ -367,39 +371,43 @@ class ResultWidget(QWidget):
         # 文件统计概览
         summary_widget = QWidget()
         summary_layout = QVBoxLayout(summary_widget)
+        summary_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
+        summary_layout.setSpacing(5)  # 设置固定间距
         
         summary_title = QLabel("按文件统计:")
-        summary_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        summary_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         summary_layout.addWidget(summary_title)
         
         self.unused_summary_table = QTableWidget()
         self.unused_summary_table.setColumnCount(2)
         self.unused_summary_table.setHorizontalHeaderLabels(["文件", "未使用键数"])
-        self.unused_summary_table.setMaximumHeight(150)
+        self.unused_summary_table.setMinimumHeight(100)  # 设置最小高度而不是最大高度
         self.setup_table_style(self.unused_summary_table)
-        summary_layout.addWidget(self.unused_summary_table)
+        summary_layout.addWidget(self.unused_summary_table, 1)  # 添加拉伸因子
         
         splitter.addWidget(summary_widget)
 
         # 详细键列表
         detail_widget = QWidget()
         detail_layout = QVBoxLayout(detail_widget)
+        detail_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
+        detail_layout.setSpacing(5)  # 设置固定间距
         
         detail_title = QLabel("详细列表:")
-        detail_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        detail_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         detail_layout.addWidget(detail_title)
         
         self.unused_table = QTableWidget()
         self.unused_table.setColumnCount(3)
         self.unused_table.setHorizontalHeaderLabels(["键名", "文件", "值"])
         self.setup_table_style(self.unused_table)
-        detail_layout.addWidget(self.unused_table)
+        detail_layout.addWidget(self.unused_table, 1)  # 添加拉伸因子
         
         splitter.addWidget(detail_widget)
         
         # 设置分割器属性
-        splitter.setStretchFactor(0, 0)  # 统计概览不拉伸
-        splitter.setStretchFactor(1, 1)  # 详细列表可拉伸
+        splitter.setStretchFactor(0, 1)  # 统计概览可适度拉伸
+        splitter.setStretchFactor(1, 2)  # 详细列表可拉伸更多
         splitter.setSizes([150, 300])  # 设置初始大小比例
         
         layout.addWidget(splitter)
@@ -443,28 +451,32 @@ class ResultWidget(QWidget):
         # 总体覆盖率概览
         overview_widget = QWidget()
         overview_layout = QVBoxLayout(overview_widget)
+        overview_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
+        overview_layout.setSpacing(5)  # 设置固定间距
         
         overview_title = QLabel("总体覆盖率:")
-        overview_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        overview_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         overview_layout.addWidget(overview_title)
 
         # 总体覆盖率表格
         self.coverage_table = QTableWidget()
         self.coverage_table.setColumnCount(5)
         self.coverage_table.setHorizontalHeaderLabels(["文件", "总调用数", "覆盖调用数", "覆盖率", "状态"])
-        self.coverage_table.setMaximumHeight(200)
+        self.coverage_table.setMinimumHeight(120)  # 设置最小高度而不是最大高度
         self.setup_table_style(self.coverage_table)
         self.coverage_table.itemDoubleClicked.connect(self.on_coverage_item_double_clicked)
-        overview_layout.addWidget(self.coverage_table)
+        overview_layout.addWidget(self.coverage_table, 1)  # 添加拉伸因子
         
         splitter.addWidget(overview_widget)
 
         # 按国际化文件的详细覆盖率
         detail_widget = QWidget()
         detail_layout = QVBoxLayout(detail_widget)
+        detail_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
+        detail_layout.setSpacing(5)  # 设置固定间距
         
         detail_title = QLabel("各国际化文件中的覆盖率:")
-        detail_title.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 5px;")
+        detail_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         detail_layout.addWidget(detail_title)
 
         # 详细覆盖率表格
@@ -472,13 +484,13 @@ class ResultWidget(QWidget):
         self.i18n_coverage_table.setColumnCount(6)
         self.i18n_coverage_table.setHorizontalHeaderLabels(["源文件", "国际化文件", "总调用数", "覆盖调用数", "覆盖率", "状态"])
         self.setup_table_style(self.i18n_coverage_table)
-        detail_layout.addWidget(self.i18n_coverage_table)
+        detail_layout.addWidget(self.i18n_coverage_table, 1)  # 添加拉伸因子
         
         splitter.addWidget(detail_widget)
         
         # 设置分割器属性
-        splitter.setStretchFactor(0, 0)  # 总体概览不拉伸
-        splitter.setStretchFactor(1, 1)  # 详细列表可拉伸
+        splitter.setStretchFactor(0, 1)  # 总体概览可适度拉伸
+        splitter.setStretchFactor(1, 2)  # 详细列表可拉伸更多
         splitter.setSizes([200, 400])  # 设置初始大小比例
         
         layout.addWidget(splitter)
