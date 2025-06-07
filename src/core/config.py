@@ -43,11 +43,14 @@ class Config:
 
     # 国际化调用模式配置
     i18n_patterns: List[str] = field(
-        default_factory=lambda: [r'(?<![a-zA-Z])t\([\'"`](.*?)[\'"`]\)',  # t() but not preceded by any letter
-            r'\$t\([\'"`](.*?)[\'"`]\)',  # $t()
-            r'i18n\.t\([\'"`](.*?)[\'"`]\)',  # i18n.t()
-            r'(?<![a-zA-Z])_\([\'"`](.*?)[\'"`]\)',  # _() but not preceded by any letter
-            r'gettext\([\'"`](.*?)[\'"`]\)'  # gettext()
+        default_factory=lambda: [
+            # 改进的模式，支持额外参数并避免变量插值
+            r'\$t\s*\(\s*([\'"])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',  # $t() with quotes and params
+            r'\$t\s*\(\s*(`)((?:(?!`)[^\\]|\\.)*?)`(?:\s*,.*?)?\s*\)',       # $t() with backticks (filtered for ${})
+            r'(?<![a-zA-Z$\.])t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',  # t() standalone
+            r'i18n\.t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',  # i18n.t()
+            r'(?<![a-zA-Z])_\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',  # _() 
+            r'gettext\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',  # gettext()
         ])
 
     # 文件扩展名配置
