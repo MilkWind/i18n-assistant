@@ -904,6 +904,7 @@ class ResultWidget(QWidget):
     def open_optimized_directory(self) -> None:
         """打开优化文件目录"""
         if not self.analysis_results:
+            QMessageBox.warning(self, "警告", "没有分析结果数据")
             return
 
         try:
@@ -919,21 +920,19 @@ class ResultWidget(QWidget):
                     base_output_path = os.path.abspath("./i18n-analysis")
                 
                 optimized_path = os.path.join(base_output_path, optimization_result.session_dir, "optimized")
-            else:
-                # 回退到传统的优化目录
-                if config and hasattr(config, 'output_path'):
-                    base_output_path = os.path.abspath(config.output_path)
-                else:
-                    base_output_path = os.path.abspath("./i18n-analysis")
                 
-                optimized_path = os.path.join(base_output_path, "optimized")
-
-            # 确保目录存在，不存在则创建
-            if not os.path.exists(optimized_path):
-                os.makedirs(optimized_path, exist_ok=True)
-                QMessageBox.information(self, "信息", f"已创建优化文件目录: {optimized_path}")
-            
-            os.startfile(optimized_path)  # Windows
+                # 检查优化目录是否存在
+                if not os.path.exists(optimized_path):
+                    QMessageBox.warning(self, "警告", f"优化文件目录不存在: {optimized_path}")
+                    return
+                
+                os.startfile(optimized_path)  # Windows
+            else:
+                # 没有优化结果或会话目录，显示提示信息
+                QMessageBox.information(self, "提示", 
+                    "当前分析没有生成优化文件。\n\n"
+                    "优化文件只有在发现未使用的键或缺失的键时才会生成。\n"
+                    "请检查分析结果或重新运行分析。")
 
         except Exception as e:
             QMessageBox.critical(self, "错误", f"打开优化文件目录失败: {str(e)}")

@@ -1,8 +1,12 @@
 @echo off
 pyinstaller ^
   --onefile ^
-  --windowed ^
   --name "i18n-assistant" ^
+  --hidden-import "yaml" ^
+  --hidden-import "PyQt6" ^
+  --hidden-import "PyQt6.QtCore" ^
+  --hidden-import "PyQt6.QtWidgets" ^
+  --hidden-import "PyQt6.QtGui" ^
   --exclude-module "tkinter" ^
   --exclude-module "matplotlib" ^
   --exclude-module "numpy" ^

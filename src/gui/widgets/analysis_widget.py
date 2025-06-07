@@ -110,8 +110,6 @@ class AnalysisWorker(QThread):
             # 生成各种报告
             text_report = reporter.generate_full_report(analysis_result, parse_result)
             json_report = reporter.generate_json_report(analysis_result)
-            # 使用reporter的方法作为备用的优化文件生成（仅移除未使用键）
-            backup_optimized_files = reporter.generate_optimized_i18n_files(analysis_result, parse_result)
             
             self.log_message.emit("INFO", "报告生成完成")
             
@@ -125,8 +123,7 @@ class AnalysisWorker(QThread):
                 'config': self.config,  # 添加配置信息
                 'reports': {
                     'text': text_report,
-                    'json': json_report,
-                    'optimized': backup_optimized_files  # 备用的优化文件
+                    'json': json_report
                 }
             })
             

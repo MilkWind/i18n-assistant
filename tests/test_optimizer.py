@@ -123,16 +123,15 @@ def test_optimizer_initialization(config):
     assert optimizer.config == config
 
 
-def test_create_output_directories(config):
-    """测试创建输出目录"""
+def test_ensure_base_output_directory(config):
+    """测试创建基础输出目录"""
     optimizer = I18nOptimizer(config)
-    optimizer._create_output_directories()
     
+    optimizer._ensure_base_output_directory()
+    
+    # 验证基础输出目录存在
     output_path = Path(config.output_path)
     assert output_path.exists()
-    assert (output_path / "optimized").exists()
-    assert (output_path / "backup").exists()
-    assert (output_path / "reports").exists()
 
 
 def test_group_unused_keys_by_file(config, sample_analysis_result):
@@ -282,13 +281,64 @@ def test_full_optimization(config, sample_analysis_result, sample_parse_result, 
     
     # 验证输出目录结构
     output_path = Path(config.output_path)
-    assert (output_path / "optimized").exists()
-    assert (output_path / "backup").exists()
-    assert (output_path / "reports").exists()
+    session_path = output_path / result.session_dir
+    assert session_path.exists()
+    assert (session_path / "optimized").exists()
+    assert (session_path / "backup").exists()
+    assert (session_path / "reports").exists()
     
     # 验证报告文件
-    assert (output_path / "reports" / "optimization_report.json").exists()
-    assert (output_path / "reports" / "optimization_report.txt").exists()
+    assert (session_path / "reports" / "optimization_report.json").exists()
+    assert (session_path / "reports" / "optimization_report.txt").exists()
+
+
+def test_no_optimization_no_directories(config, temp_dir):
+    """测试当没有优化内容时不创建不必要的目录"""
+    from src.core.analyzer import AnalysisResult, MissingKey, UnusedKey
+    
+    # 创建空的分析结果（没有缺失键或未使用键）
+    empty_analysis_result = AnalysisResult(
+        missing_keys=[],
+        unused_keys=[],
+        inconsistent_keys=[],
+        total_used_keys=5,
+        total_defined_keys=5,
+        coverage_percentage=100.0
+    )
+    
+    # 创建示例解析结果
+    parse_result = [
+        MockParseResult(
+            file_path="en.json",
+            data={
+                "common": {
+                    "hello": "Hello",
+                    "world": "World"
+                }
+            }
+        )
+    ]
+    
+    # 执行优化
+    optimizer = I18nOptimizer(config)
+    result = optimizer.optimize(empty_analysis_result, parse_result)
+    
+    # 验证结果
+    assert isinstance(result, OptimizationResult)
+    assert result.removed_keys_count == 0
+    assert result.added_keys_count == 0
+    assert len(result.optimized_files) == 0
+    assert len(result.backup_files) == 0
+    
+    # 验证没有创建会话目录（因为没有实际的优化内容）
+    output_path = Path(config.output_path)
+    if output_path.exists():
+        session_path = output_path / result.session_dir
+        # 会话目录可能存在（基础目录），但里面不应该有子目录
+        if session_path.exists():
+            assert not (session_path / "optimized").exists()
+            assert not (session_path / "backup").exists()
+            assert not (session_path / "reports").exists()
 
 
 if __name__ == "__main__":

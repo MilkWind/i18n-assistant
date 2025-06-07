@@ -241,16 +241,19 @@ class TestEndToEndIntegration:
             assert 'unused_keys' in json_data
             assert len(json_data['missing_keys']) >= 2
         
-        # 生成优化的国际化文件
-        optimized_files = reporter.generate_optimized_i18n_files(analysis_result, parse_results)
-        assert len(optimized_files) == 3  # 对应3个原始文件
+        # 使用I18nOptimizer生成优化文件
+        from core.optimizer import I18nOptimizer
+        optimizer = I18nOptimizer(self.config)
+        optimization_result = optimizer.optimize(analysis_result, parse_results)
+        
+        assert len(optimization_result.optimized_files) >= 1  # 至少有一个文件被优化
         
         # 验证优化文件
-        for file_path in optimized_files:
-            assert os.path.exists(file_path)
-            assert 'optimized' in file_path
+        for original_file, optimized_file in optimization_result.optimized_files.items():
+            assert os.path.exists(optimized_file)
+            assert optimization_result.session_dir in optimized_file  # 文件在会话目录中
             
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(optimized_file, 'r', encoding='utf-8') as f:
                 optimized_data = json.load(f)
                 # 优化文件应该移除未使用的键
                 assert 'unused.section' not in str(optimized_data)

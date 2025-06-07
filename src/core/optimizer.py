@@ -61,12 +61,9 @@ class I18nOptimizer:
         """
         optimization_result = OptimizationResult()
         
-        # 创建会话目录
+        # 创建会话目录名称（但暂不创建实际目录）
         self._create_session_directory()
         optimization_result.session_dir = self.session_dir
-        
-        # 创建输出目录
-        self._create_output_directories()
         
         # 准备优化数据
         unused_keys_by_file = self._group_unused_keys_by_file(analysis_result.unused_keys)
@@ -178,21 +175,12 @@ class I18nOptimizer:
                 keys.update(self._get_all_keys_from_dict(value, full_key))
         return keys
     
-    def _create_output_directories(self) -> None:
-        """创建输出目录结构"""
+    def _ensure_base_output_directory(self) -> None:
+        """确保基础输出目录存在"""
         output_path = Path(self.config.output_path)
         
-        # 创建主输出目录
+        # 仅创建主输出目录
         output_path.mkdir(parents=True, exist_ok=True)
-        
-        # 创建会话特定的子目录
-        session_path = output_path / self.session_dir
-        session_path.mkdir(exist_ok=True)
-        
-        # 在会话目录下创建子目录
-        (session_path / "optimized").mkdir(exist_ok=True)
-        (session_path / "backup").mkdir(exist_ok=True)
-        (session_path / "reports").mkdir(exist_ok=True)
         
     def _group_unused_keys_by_file(self, unused_keys: List[UnusedKey]) -> Dict[str, Set[str]]:
         """按文件分组未使用的键"""
@@ -298,6 +286,9 @@ class I18nOptimizer:
         # 使用会话特定的optimized目录
         output_path = Path(self.config.output_path) / self.session_dir / "optimized"
         
+        # 确保目录存在（延迟创建）
+        output_path.mkdir(parents=True, exist_ok=True)
+        
         # 只使用文件名，不保留原目录结构
         original_path = Path(original_file_path)
         file_name = original_path.name
@@ -317,6 +308,9 @@ class I18nOptimizer:
             
         # 使用会话特定的backup目录
         backup_path = Path(self.config.output_path) / self.session_dir / "backup"
+        
+        # 确保目录存在（延迟创建）
+        backup_path.mkdir(parents=True, exist_ok=True)
         
         # 只使用文件名，不保留原目录结构
         original_path = Path(original_file_path)
@@ -376,6 +370,11 @@ class I18nOptimizer:
     def _save_optimization_report(self, optimization_result: OptimizationResult, 
                                 analysis_result: AnalysisResult) -> None:
         """保存优化报告"""
+        # 只有在有实际优化内容时才创建reports目录和保存报告
+        if optimization_result.removed_keys_count == 0 and optimization_result.added_keys_count == 0:
+            print("[INFO] 没有优化内容，跳过优化报告生成")
+            return
+            
         reports_path = Path(self.config.output_path) / self.session_dir / "reports"
         
         # 确保 reports 目录存在

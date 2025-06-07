@@ -329,43 +329,6 @@ class ReportGenerator:
         
         return str(json_file)
     
-    def generate_optimized_i18n_files(
-        self, 
-        analysis_result: AnalysisResult, 
-        parse_result: ParseResult
-    ) -> List[str]:
-        """
-        生成优化后的国际化文件（移除未使用的键）
-        
-        Args:
-            analysis_result: 分析结果
-            parse_result: 解析结果
-            
-        Returns:
-            List[str]: 生成的文件路径列表
-        """
-        generated_files = []
-        
-        # 收集未使用的键
-        unused_keys = {uk.key for uk in analysis_result.unused_keys}
-        
-        # 为每个原始i18n文件生成优化版本
-        for file_path, file_data in parse_result.files_data.items():
-            optimized_data = self._remove_unused_keys(file_data, unused_keys)
-            
-            # 创建输出文件路径
-            original_path = Path(file_path)
-            output_file = self.output_path / "optimized" / original_path.name
-            output_file.parent.mkdir(parents=True, exist_ok=True)
-            
-            # 写入优化后的文件
-            with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(optimized_data, f, ensure_ascii=False, indent=2)
-            
-            generated_files.append(str(output_file))
-        
-        return generated_files
-    
     def generate_missing_keys_template(self, analysis_result: AnalysisResult) -> List[str]:
         """
         生成缺失键的模板文件
@@ -443,25 +406,6 @@ class ReportGenerator:
             suggestions.append("• 项目的国际化状况良好，没有发现明显问题！")
         
         return suggestions
-    
-    def _remove_unused_keys(self, data: Dict[str, Any], unused_keys: set) -> Dict[str, Any]:
-        """从数据中移除未使用的键"""
-        if not isinstance(data, dict):
-            return data
-        
-        result = {}
-        for key, value in data.items():
-            # 检查是否为嵌套结构
-            if isinstance(value, dict):
-                nested_result = self._remove_unused_keys(value, unused_keys)
-                if nested_result:  # 只保留非空的嵌套对象
-                    result[key] = nested_result
-            else:
-                # 构建完整的键路径
-                if key not in unused_keys:
-                    result[key] = value
-        
-        return result
     
     def _set_nested_value(self, data: Dict[str, Any], key_path: str, value: Any):
         """设置嵌套键值"""

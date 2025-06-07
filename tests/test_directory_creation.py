@@ -94,22 +94,20 @@ def sample_parse_result():
     ]
 
 
-def test_auto_create_output_directories(config_with_nonexistent_output):
-    """测试自动创建输出目录"""
+def test_auto_create_base_output_directory(config_with_nonexistent_output):
+    """测试自动创建基础输出目录"""
     optimizer = I18nOptimizer(config_with_nonexistent_output)
     
     # 确认输出目录不存在
     assert not os.path.exists(config_with_nonexistent_output.output_path)
     
-    # 调用创建目录方法
-    optimizer._create_output_directories()
+    # 设置会话目录名称
+    optimizer._create_session_directory()
+    optimizer._ensure_base_output_directory()
     
-    # 验证所有目录都被创建
+    # 验证基础输出目录被创建
     output_path = Path(config_with_nonexistent_output.output_path)
     assert output_path.exists()
-    assert (output_path / "optimized").exists()
-    assert (output_path / "backup").exists()
-    assert (output_path / "reports").exists()
 
 
 def test_auto_create_nested_file_directories(config_with_nonexistent_output, temp_dir):
@@ -142,6 +140,9 @@ def test_auto_create_backup_directories(config_with_nonexistent_output, temp_dir
     """测试备份文件时自动创建目录"""
     optimizer = I18nOptimizer(config_with_nonexistent_output)
     
+    # 设置会话目录名称
+    optimizer._create_session_directory()
+    
     # 创建原始文件
     original_file = os.path.join(temp_dir, "original.json")
     with open(original_file, 'w', encoding='utf-8') as f:
@@ -154,7 +155,8 @@ def test_auto_create_backup_directories(config_with_nonexistent_output, temp_dir
     assert os.path.exists(backup_path)
     
     # 验证备份目录结构被创建
-    backup_dir = Path(config_with_nonexistent_output.output_path) / "backup"
+    session_path = Path(config_with_nonexistent_output.output_path) / optimizer.session_dir
+    backup_dir = session_path / "backup"
     assert backup_dir.exists()
 
 
@@ -188,9 +190,12 @@ def test_full_optimization_with_nonexistent_directories(
     # 验证所有目录都被创建
     output_path = Path(config_with_nonexistent_output.output_path)
     assert output_path.exists()
-    assert (output_path / "optimized").exists()
-    assert (output_path / "backup").exists()
-    assert (output_path / "reports").exists()
+    
+    session_path = output_path / result.session_dir
+    assert session_path.exists()
+    assert (session_path / "optimized").exists()
+    assert (session_path / "backup").exists()
+    assert (session_path / "reports").exists()
     
     # 验证优化文件被创建
     assert len(result.optimized_files) > 0
@@ -203,8 +208,8 @@ def test_full_optimization_with_nonexistent_directories(
         assert os.path.exists(backup_file)
     
     # 验证报告文件被创建
-    assert (output_path / "reports" / "optimization_report.json").exists()
-    assert (output_path / "reports" / "optimization_report.txt").exists()
+    assert (session_path / "reports" / "optimization_report.json").exists()
+    assert (session_path / "reports" / "optimization_report.txt").exists()
 
 
 def test_error_handling_with_permission_issues(config_with_nonexistent_output):
