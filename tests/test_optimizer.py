@@ -341,5 +341,99 @@ def test_no_optimization_no_directories(config, temp_dir):
             assert not (session_path / "reports").exists()
 
 
+def test_group_inconsistent_keys_by_file(config):
+    """测试按文件分组不一致键"""
+    from src.core.analyzer import InconsistentKey
+    
+    optimizer = I18nOptimizer(config)
+    
+    # 创建测试数据
+    inconsistent_keys = [
+        InconsistentKey(
+            key="inconsistent.key1",
+            existing_files=["en.json"],
+            missing_files=["zh.json", "fr.json"]
+        ),
+        InconsistentKey(
+            key="inconsistent.key2",
+            existing_files=["zh.json"],
+            missing_files=["en.json"]
+        ),
+        InconsistentKey(
+            key="unused.inconsistent.key",  # 这个键没有被使用
+            existing_files=["en.json"],
+            missing_files=["zh.json"]
+        )
+    ]
+    
+    # 只有前两个键被使用了
+    used_keys = {"inconsistent.key1", "inconsistent.key2"}
+    
+    # 执行分组
+    grouped = optimizer._group_inconsistent_keys_by_file(inconsistent_keys, used_keys)
+    
+    # 验证结果
+    assert "zh.json" in grouped
+    assert "fr.json" in grouped
+    assert "en.json" in grouped
+    
+    # inconsistent.key1 应该被添加到 zh.json 和 fr.json 中
+    assert "inconsistent.key1" in grouped["zh.json"]
+    assert "inconsistent.key1" in grouped["fr.json"]
+    assert grouped["zh.json"]["inconsistent.key1"] == ""
+    assert grouped["fr.json"]["inconsistent.key1"] == ""
+    
+    # inconsistent.key2 应该被添加到 en.json 中
+    assert "inconsistent.key2" in grouped["en.json"]
+    assert grouped["en.json"]["inconsistent.key2"] == ""
+    
+    # unused.inconsistent.key 不应该出现在任何地方，因为它没有被使用
+    for file_keys in grouped.values():
+        assert "unused.inconsistent.key" not in file_keys
+
+
+def test_merge_missing_keys(config):
+    """测试合并缺失键和不一致键"""
+    optimizer = I18nOptimizer(config)
+    
+    # 普通缺失键
+    missing_keys = {
+        "en.json": {"missing.key1": "", "missing.key2": ""},
+        "zh.json": {"missing.key1": ""}
+    }
+    
+    # 不一致键
+    inconsistent_keys = {
+        "en.json": {"inconsistent.key1": ""},
+        "zh.json": {"inconsistent.key1": "", "inconsistent.key2": ""},
+        "fr.json": {"inconsistent.key1": ""}
+    }
+    
+    # 执行合并
+    merged = optimizer._merge_missing_keys(missing_keys, inconsistent_keys)
+    
+    # 验证结果
+    assert "en.json" in merged
+    assert "zh.json" in merged
+    assert "fr.json" in merged
+    
+    # en.json 应该包含所有键
+    en_keys = merged["en.json"]
+    assert "missing.key1" in en_keys
+    assert "missing.key2" in en_keys
+    assert "inconsistent.key1" in en_keys
+    
+    # zh.json 应该包含合并的键
+    zh_keys = merged["zh.json"]
+    assert "missing.key1" in zh_keys
+    assert "inconsistent.key1" in zh_keys
+    assert "inconsistent.key2" in zh_keys
+    
+    # fr.json 只应该有不一致键
+    fr_keys = merged["fr.json"]
+    assert "inconsistent.key1" in fr_keys
+    assert len(fr_keys) == 1
+
+
 if __name__ == "__main__":
     pytest.main([__file__]) 

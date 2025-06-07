@@ -18,7 +18,7 @@ from typing import Dict, List, Any, Set
 
 import yaml
 
-from .analyzer import AnalysisResult, MissingKey, UnusedKey
+from .analyzer import AnalysisResult, MissingKey, UnusedKey, InconsistentKey
 from .config import Config
 from .parser import ParseResult
 
@@ -69,9 +69,20 @@ class I18nOptimizer:
         # 准备优化数据
         unused_keys_by_file = self._group_unused_keys_by_file(analysis_result.unused_keys)
         missing_keys_by_file = self._group_missing_keys_by_file(analysis_result.missing_keys)
+        
+        # 处理不一致的键：将被使用的不一致键添加到缺失该键的文件中
+        inconsistent_keys_by_file = self._group_inconsistent_keys_by_file(
+            analysis_result.inconsistent_keys, analysis_result.used_keys_detail.keys()
+        )
+        
+        # 合并缺失键和不一致键
+        combined_missing_keys_by_file = self._merge_missing_keys(missing_keys_by_file, inconsistent_keys_by_file)
 
         print(
-            f"[INFO] 优化准备: 找到 {len(unused_keys_by_file)} 个文件有未使用键, {len(missing_keys_by_file)} 个文件需要添加键")
+            f"[INFO] 优化准备: 找到 {len(unused_keys_by_file)} 个文件有未使用键, "
+            f"{len(combined_missing_keys_by_file)} 个文件需要添加键 "
+            f"(包含 {len(inconsistent_keys_by_file)} 个文件的不一致键)"
+        )
 
         # 处理每个国际化文件
         # parse_result可能是ParseResult对象或旧的list格式
@@ -94,14 +105,17 @@ class I18nOptimizer:
 
             print(f"[INFO] 处理文件: {os.path.basename(file_path)}")
 
-            # 获取当前文件的未使用键和缺失键
+            # 获取当前文件的未使用键和缺失键（包含不一致键）
             unused_keys_for_file = unused_keys_by_file.get(file_path, set())
-            missing_keys_for_file = missing_keys_by_file.get(file_path, {})
+            missing_keys_for_file = combined_missing_keys_by_file.get(file_path, {})
 
             if unused_keys_for_file:
                 print(f"[INFO]   - 待移除未使用键: {len(unused_keys_for_file)} 个")
             if missing_keys_for_file:
-                print(f"[INFO]   - 待添加缺失键: {len(missing_keys_for_file)} 个")
+                original_missing = len(missing_keys_by_file.get(file_path, {}))
+                inconsistent_missing = len(inconsistent_keys_by_file.get(file_path, {}))
+                print(f"[INFO]   - 待添加缺失键: {len(missing_keys_for_file)} 个 "
+                      f"(普通缺失: {original_missing}, 不一致补全: {inconsistent_missing})")
 
             # 优化当前文件
             optimized_data, removed_count, added_count = self._optimize_file_data(original_data, unused_keys_for_file,
@@ -199,6 +213,51 @@ class I18nOptimizer:
                     default_value = ""
                     grouped[suggested_file][missing_key.key] = default_value
         return dict(grouped)
+
+    def _group_inconsistent_keys_by_file(self, inconsistent_keys: List, used_keys: Set[str]) -> Dict[str, Dict[str, str]]:
+        """
+        按建议文件分组不一致的键
+        
+        Args:
+            inconsistent_keys: 不一致键列表 (InconsistentKey对象)
+            used_keys: 被使用的键集合
+            
+        Returns:
+            Dict[str, Dict[str, str]]: 按文件分组的不一致键，键为文件路径，值为键名和默认值的字典
+        """
+        grouped = defaultdict(dict)
+        
+        for inconsistent_key in inconsistent_keys:
+            # 只处理被使用的不一致键
+            if inconsistent_key.key in used_keys:
+                # 将该键添加到所有缺失该键的国际化文件中
+                for missing_file in inconsistent_key.missing_files:
+                    grouped[missing_file][inconsistent_key.key] = ""
+                    
+        return dict(grouped)
+
+    def _merge_missing_keys(self, missing_keys: Dict[str, Dict[str, str]], inconsistent_keys: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str, str]]:
+        """
+        合并缺失键和不一致键
+        
+        Args:
+            missing_keys: 普通缺失键字典
+            inconsistent_keys: 不一致键字典
+            
+        Returns:
+            Dict[str, Dict[str, str]]: 合并后的键字典
+        """
+        merged = defaultdict(dict)
+        
+        # 添加所有普通缺失键
+        for file_path, keys in missing_keys.items():
+            merged[file_path].update(keys)
+            
+        # 添加所有不一致键
+        for file_path, keys in inconsistent_keys.items():
+            merged[file_path].update(keys)
+            
+        return dict(merged)
 
     def _optimize_file_data(self, original_data: Dict, unused_keys: Set[str], missing_keys: Dict[str, str]) -> tuple:
         """
@@ -378,7 +437,9 @@ class I18nOptimizer:
                 "missing_keys": [{"key": mk.key, "file_path": mk.file_path, "line_number": mk.line_number,
                                   "suggested_files": mk.suggested_files} for mk in analysis_result.missing_keys],
                 "unused_keys": [{"key": uk.key, "i18n_file": uk.i18n_file, "value": uk.value} for uk in
-                                analysis_result.unused_keys]}}
+                                analysis_result.unused_keys],
+                "inconsistent_keys": [{"key": ik.key, "existing_files": ik.existing_files, "missing_files": ik.missing_files} for ik in
+                                      analysis_result.inconsistent_keys]}}
 
         try:
             # 保存JSON报告
@@ -394,7 +455,16 @@ class I18nOptimizer:
                 f.write(f"优化统计:\n")
                 f.write(f"  - 移除未使用键: {optimization_result.removed_keys_count} 个\n")
                 f.write(f"  - 添加缺失键: {optimization_result.added_keys_count} 个\n")
+                f.write(f"    (包含 {len(analysis_result.inconsistent_keys)} 个不一致键的补全)\n")
                 f.write(f"  - 优化文件数: {len(optimization_result.optimized_files)} 个\n\n")
+
+                # 添加不一致键的详细信息
+                if analysis_result.inconsistent_keys:
+                    f.write("不一致键处理:\n")
+                    for ik in analysis_result.inconsistent_keys:
+                        if ik.key in analysis_result.used_keys_detail:
+                            f.write(f"  - 键 '{ik.key}' 已补全到文件: {', '.join(ik.missing_files)}\n")
+                    f.write("\n")
 
                 f.write("优化后的文件:\n")
                 for original, optimized in optimization_result.optimized_files.items():
@@ -421,6 +491,7 @@ class I18nOptimizer:
         print(f"\n原始分析结果:")
         print(f"  - 未使用键总数: {len(analysis_result.unused_keys)}")
         print(f"  - 缺失键总数: {len(analysis_result.missing_keys)}")
+        print(f"  - 不一致键总数: {len(analysis_result.inconsistent_keys)}")
 
         if analysis_result.unused_keys:
             print(f"\n未使用键详情:")
@@ -435,6 +506,14 @@ class I18nOptimizer:
                 print(f"  - {mk.key} (建议文件: {mk.suggested_files})")
             if len(analysis_result.missing_keys) > 5:
                 print(f"  ... 还有 {len(analysis_result.missing_keys) - 5} 个")
+
+        if analysis_result.inconsistent_keys:
+            print(f"\n不一致键详情:")
+            for ik in analysis_result.inconsistent_keys[:5]:  # 只显示前5个
+                if ik.key in analysis_result.used_keys_detail:
+                    print(f"  - {ik.key} (补全到: {ik.missing_files})")
+            if len(analysis_result.inconsistent_keys) > 5:
+                print(f"  ... 还有 {len(analysis_result.inconsistent_keys) - 5} 个")
 
         print(f"\n优化后的文件:")
         for original, optimized in optimization_result.optimized_files.items():
