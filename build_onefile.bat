@@ -3,10 +3,8 @@ pyinstaller ^
   --onefile ^
   --name "i18n-assistant" ^
   --hidden-import "yaml" ^
-  --hidden-import "PyQt6" ^
-  --hidden-import "PyQt6.QtCore" ^
-  --hidden-import "PyQt6.QtWidgets" ^
-  --hidden-import "PyQt6.QtGui" ^
+  --hidden-import "yaml.loader" ^
+  --hidden-import "yaml.dumper" ^
   --exclude-module "tkinter" ^
   --exclude-module "matplotlib" ^
   --exclude-module "numpy" ^

@@ -6,13 +6,12 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[],
-    hiddenimports=['yaml', 'PyQt6', 'PyQt6.QtCore', 'PyQt6.QtWidgets', 'PyQt6.QtGui'],
+    hiddenimports=['yaml', 'yaml.loader', 'yaml.dumper'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=['tkinter', 'matplotlib', 'numpy', 'pandas', 'scipy', 'jupyter', 'IPython', 'notebook'],
     noarchive=False,
-    optimize=0,
 )
 pyz = PYZ(a.pure)
 
