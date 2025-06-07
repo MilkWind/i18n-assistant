@@ -62,8 +62,8 @@ class StatsWidget(QWidget):
 
         self.stats_cards = {}
         stats_items = [("total_keys", "总键数", "#2196F3"), ("missing_keys", "缺失键", "#F44336"),
-            ("unused_keys", "未使用键", "#FF9800"), ("inconsistent_keys", "不一致键", "#9C27B0"),
-            ("removed_keys", "已移除键", "#4CAF50"), ("added_keys", "已添加键", "#2196F3")]
+                       ("unused_keys", "未使用键", "#FF9800"), ("inconsistent_keys", "不一致键", "#9C27B0"),
+                       ("removed_keys", "已移除键", "#4CAF50"), ("added_keys", "已添加键", "#2196F3")]
 
         # 按3x2网格布局添加卡片
         for i, (key, label, color) in enumerate(stats_items):
@@ -192,7 +192,7 @@ class StatsWidget(QWidget):
             self.stats_cards["missing_keys"].value_label.setText(str(len(missing_keys)))
             self.stats_cards["unused_keys"].value_label.setText(str(len(unused_keys)))
             self.stats_cards["inconsistent_keys"].value_label.setText(str(len(inconsistent_keys)))
-            
+
             # 更新优化结果统计
             if optimization_result:
                 removed_keys_count = getattr(optimization_result, 'removed_keys_count', 0)
@@ -289,7 +289,7 @@ class ResultWidget(QWidget):
 
         self.open_output_button = QPushButton("打开输出目录")
         self.open_output_button.clicked.connect(self.open_output_directory)
-        
+
         self.open_optimized_button = QPushButton("查看优化文件")
         self.open_optimized_button.clicked.connect(self.open_optimized_directory)
 
@@ -316,24 +316,24 @@ class ResultWidget(QWidget):
 
         # 创建垂直分割器
         splitter = QSplitter(Qt.Orientation.Vertical)
-        
+
         # 文件统计概览
         summary_widget = QWidget()
         summary_layout = QVBoxLayout(summary_widget)
         summary_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
         summary_layout.setSpacing(5)  # 设置固定间距
-        
+
         summary_title = QLabel("按文件统计:")
         summary_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         summary_layout.addWidget(summary_title)
-        
+
         self.missing_summary_table = QTableWidget()
         self.missing_summary_table.setColumnCount(2)
         self.missing_summary_table.setHorizontalHeaderLabels(["文件", "缺失键数"])
         self.missing_summary_table.setMinimumHeight(100)  # 设置最小高度而不是最大高度
         self.setup_table_style(self.missing_summary_table)
         summary_layout.addWidget(self.missing_summary_table, 1)  # 添加拉伸因子
-        
+
         splitter.addWidget(summary_widget)
 
         # 详细键列表
@@ -341,7 +341,7 @@ class ResultWidget(QWidget):
         detail_layout = QVBoxLayout(detail_widget)
         detail_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
         detail_layout.setSpacing(5)  # 设置固定间距
-        
+
         detail_title = QLabel("详细列表:")
         detail_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         detail_layout.addWidget(detail_title)
@@ -358,14 +358,14 @@ class ResultWidget(QWidget):
         self.missing_table.itemDoubleClicked.connect(self.on_missing_item_double_clicked)
 
         detail_layout.addWidget(self.missing_table, 1)  # 添加拉伸因子
-        
+
         splitter.addWidget(detail_widget)
-        
+
         # 设置分割器属性
         splitter.setStretchFactor(0, 1)  # 统计概览可适度拉伸
         splitter.setStretchFactor(1, 2)  # 详细列表可拉伸更多
         splitter.setSizes([150, 300])  # 设置初始大小比例
-        
+
         layout.addWidget(splitter)
 
         return widget
@@ -382,24 +382,24 @@ class ResultWidget(QWidget):
 
         # 创建垂直分割器
         splitter = QSplitter(Qt.Orientation.Vertical)
-        
+
         # 文件统计概览
         summary_widget = QWidget()
         summary_layout = QVBoxLayout(summary_widget)
         summary_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
         summary_layout.setSpacing(5)  # 设置固定间距
-        
+
         summary_title = QLabel("按文件统计:")
         summary_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         summary_layout.addWidget(summary_title)
-        
+
         self.unused_summary_table = QTableWidget()
         self.unused_summary_table.setColumnCount(2)
         self.unused_summary_table.setHorizontalHeaderLabels(["文件", "未使用键数"])
         self.unused_summary_table.setMinimumHeight(100)  # 设置最小高度而不是最大高度
         self.setup_table_style(self.unused_summary_table)
         summary_layout.addWidget(self.unused_summary_table, 1)  # 添加拉伸因子
-        
+
         splitter.addWidget(summary_widget)
 
         # 详细键列表
@@ -407,24 +407,24 @@ class ResultWidget(QWidget):
         detail_layout = QVBoxLayout(detail_widget)
         detail_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
         detail_layout.setSpacing(5)  # 设置固定间距
-        
+
         detail_title = QLabel("详细列表:")
         detail_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         detail_layout.addWidget(detail_title)
-        
+
         self.unused_table = QTableWidget()
         self.unused_table.setColumnCount(3)
         self.unused_table.setHorizontalHeaderLabels(["键名", "文件", "值"])
         self.setup_table_style(self.unused_table)
         detail_layout.addWidget(self.unused_table, 1)  # 添加拉伸因子
-        
+
         splitter.addWidget(detail_widget)
-        
+
         # 设置分割器属性
         splitter.setStretchFactor(0, 1)  # 统计概览可适度拉伸
         splitter.setStretchFactor(1, 2)  # 详细列表可拉伸更多
         splitter.setSizes([150, 300])  # 设置初始大小比例
-        
+
         layout.addWidget(splitter)
 
         return widget
@@ -462,13 +462,13 @@ class ResultWidget(QWidget):
 
         # 创建垂直分割器
         splitter = QSplitter(Qt.Orientation.Vertical)
-        
+
         # 总体覆盖率概览
         overview_widget = QWidget()
         overview_layout = QVBoxLayout(overview_widget)
         overview_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
         overview_layout.setSpacing(5)  # 设置固定间距
-        
+
         overview_title = QLabel("总体覆盖率:")
         overview_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         overview_layout.addWidget(overview_title)
@@ -481,7 +481,7 @@ class ResultWidget(QWidget):
         self.setup_table_style(self.coverage_table)
         self.coverage_table.itemDoubleClicked.connect(self.on_coverage_item_double_clicked)
         overview_layout.addWidget(self.coverage_table, 1)  # 添加拉伸因子
-        
+
         splitter.addWidget(overview_widget)
 
         # 按国际化文件的详细覆盖率
@@ -489,7 +489,7 @@ class ResultWidget(QWidget):
         detail_layout = QVBoxLayout(detail_widget)
         detail_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
         detail_layout.setSpacing(5)  # 设置固定间距
-        
+
         detail_title = QLabel("各国际化文件中的覆盖率:")
         detail_title.setStyleSheet("font-weight: bold; font-size: 14px;")
         detail_layout.addWidget(detail_title)
@@ -497,17 +497,18 @@ class ResultWidget(QWidget):
         # 详细覆盖率表格
         self.i18n_coverage_table = QTableWidget()
         self.i18n_coverage_table.setColumnCount(6)
-        self.i18n_coverage_table.setHorizontalHeaderLabels(["源文件", "国际化文件", "总调用数", "覆盖调用数", "覆盖率", "状态"])
+        self.i18n_coverage_table.setHorizontalHeaderLabels(
+            ["源文件", "国际化文件", "总调用数", "覆盖调用数", "覆盖率", "状态"])
         self.setup_table_style(self.i18n_coverage_table)
         detail_layout.addWidget(self.i18n_coverage_table, 1)  # 添加拉伸因子
-        
+
         splitter.addWidget(detail_widget)
-        
+
         # 设置分割器属性
         splitter.setStretchFactor(0, 1)  # 总体概览可适度拉伸
         splitter.setStretchFactor(1, 2)  # 详细列表可拉伸更多
         splitter.setSizes([200, 400])  # 设置初始大小比例
-        
+
         layout.addWidget(splitter)
 
         return widget
@@ -737,29 +738,29 @@ class ResultWidget(QWidget):
             for coverage in file_coverage.values():
                 i18n_coverages = getattr(coverage, 'i18n_coverages', {})
                 total_rows += len(i18n_coverages)
-            
+
             self.i18n_coverage_table.setRowCount(total_rows)
-            
+
             current_row = 0
             for file_path, coverage in file_coverage.items():
                 # 安全获取属性
                 total_calls = getattr(coverage, 'total_calls', 0)
                 i18n_coverages = getattr(coverage, 'i18n_coverages', {})
-                
+
                 for i18n_file, i18n_coverage in i18n_coverages.items():
                     # 源文件
                     self.i18n_coverage_table.setItem(current_row, 0, QTableWidgetItem(str(file_path)))
-                    
+
                     # 国际化文件
                     self.i18n_coverage_table.setItem(current_row, 1, QTableWidgetItem(str(i18n_file)))
-                    
+
                     # 总调用数
                     self.i18n_coverage_table.setItem(current_row, 2, QTableWidgetItem(str(total_calls)))
-                    
+
                     # 覆盖调用数
                     covered_calls = getattr(i18n_coverage, 'covered_calls', 0)
                     self.i18n_coverage_table.setItem(current_row, 3, QTableWidgetItem(str(covered_calls)))
-                    
+
                     # 覆盖率
                     coverage_percentage = getattr(i18n_coverage, 'coverage_percentage', 0.0)
                     coverage_item = QTableWidgetItem(f"{coverage_percentage:.1f}%")
@@ -770,7 +771,7 @@ class ResultWidget(QWidget):
                     else:
                         coverage_item.setBackground(QColor("#FFEBEE"))
                     self.i18n_coverage_table.setItem(current_row, 4, coverage_item)
-                    
+
                     # 状态
                     if coverage_percentage == 100:
                         status = "完美"
@@ -784,15 +785,15 @@ class ResultWidget(QWidget):
                     else:
                         status = "需要改进"
                         color = "#F44336"
-                    
+
                     status_item = QTableWidgetItem(status)
                     status_item.setForeground(QColor(color))
                     self.i18n_coverage_table.setItem(current_row, 5, status_item)
-                    
+
                     current_row += 1
-            
+
             self.i18n_coverage_table.resizeColumnsToContents()
-            
+
         except Exception as e:
             print(f"Error updating i18n coverage table: {e}")
             QMessageBox.warning(self, "警告", f"更新国际化文件覆盖率表格时发生错误: {str(e)}")
@@ -828,7 +829,7 @@ class ResultWidget(QWidget):
                 return
 
             file_path, _ = QFileDialog.getSaveFileName(self, "保存JSON报告", "analysis_report.json",
-                "JSON文件 (*.json)")
+                                                       "JSON文件 (*.json)")
 
             if file_path:
                 with open(file_path, 'w', encoding='utf-8') as f:
@@ -874,14 +875,14 @@ class ResultWidget(QWidget):
             # 优先使用优化结果中的会话目录信息
             optimization_result = self.analysis_results.get('optimization_result')
             config = self.analysis_results.get('config')
-            
+
             if optimization_result and hasattr(optimization_result, 'session_dir') and optimization_result.session_dir:
                 # 使用会话特定的目录
                 if config and hasattr(config, 'output_path'):
                     base_output_path = os.path.abspath(config.output_path)
                 else:
                     base_output_path = os.path.abspath("./i18n-analysis")
-                
+
                 session_output_path = os.path.join(base_output_path, optimization_result.session_dir)
                 target_path = session_output_path
             else:
@@ -895,12 +896,12 @@ class ResultWidget(QWidget):
             if not os.path.exists(target_path):
                 os.makedirs(target_path, exist_ok=True)
                 QMessageBox.information(self, "信息", f"已创建输出目录: {target_path}")
-            
+
             os.startfile(target_path)  # Windows
 
         except Exception as e:
             QMessageBox.critical(self, "错误", f"打开输出目录失败: {str(e)}")
-            
+
     def open_optimized_directory(self) -> None:
         """打开优化文件目录"""
         if not self.analysis_results:
@@ -911,28 +912,27 @@ class ResultWidget(QWidget):
             # 优先使用优化结果中的会话目录信息
             optimization_result = self.analysis_results.get('optimization_result')
             config = self.analysis_results.get('config')
-            
+
             if optimization_result and hasattr(optimization_result, 'session_dir') and optimization_result.session_dir:
                 # 使用会话特定的优化目录
                 if config and hasattr(config, 'output_path'):
                     base_output_path = os.path.abspath(config.output_path)
                 else:
                     base_output_path = os.path.abspath("./i18n-analysis")
-                
+
                 optimized_path = os.path.join(base_output_path, optimization_result.session_dir, "optimized")
-                
+
                 # 检查优化目录是否存在
                 if not os.path.exists(optimized_path):
                     QMessageBox.warning(self, "警告", f"优化文件目录不存在: {optimized_path}")
                     return
-                
+
                 os.startfile(optimized_path)  # Windows
             else:
                 # 没有优化结果或会话目录，显示提示信息
-                QMessageBox.information(self, "提示", 
-                    "当前分析没有生成优化文件。\n\n"
-                    "优化文件只有在发现未使用的键或缺失的键时才会生成。\n"
-                    "请检查分析结果或重新运行分析。")
+                QMessageBox.information(self, "提示", "当前分析没有生成优化文件。\n\n"
+                                                      "优化文件只有在发现未使用的键或缺失的键时才会生成。\n"
+                                                      "请检查分析结果或重新运行分析。")
 
         except Exception as e:
             QMessageBox.critical(self, "错误", f"打开优化文件目录失败: {str(e)}")

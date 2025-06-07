@@ -4,17 +4,17 @@
 提供正则表达式匹配、文件过滤等工具函数。
 """
 
-import re
 import fnmatch
-from typing import List, Pattern, Tuple, Optional, Dict, Any
 import logging
+import re
+from typing import List, Pattern, Tuple, Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
 
 class PatternMatcher:
     """模式匹配器"""
-    
+
     def __init__(self, patterns: List[str]):
         """
         初始化模式匹配器
@@ -25,7 +25,7 @@ class PatternMatcher:
         self.patterns = patterns
         self.compiled_patterns: List[Pattern] = []
         self._compile_patterns()
-    
+
     def _compile_patterns(self) -> None:
         """编译正则表达式模式"""
         self.compiled_patterns = []
@@ -35,7 +35,7 @@ class PatternMatcher:
                 self.compiled_patterns.append(compiled)
             except re.error as e:
                 logger.warning(f"无效的正则表达式模式 '{pattern}': {e}")
-    
+
     def find_matches(self, text: str) -> List[Tuple[str, int, int]]:
         """
         在文本中查找所有匹配项
@@ -47,7 +47,7 @@ class PatternMatcher:
             List[Tuple[str, int, int]]: 匹配结果列表，每个元素为(匹配的键, 开始位置, 结束位置)
         """
         matches = []
-        
+
         for pattern in self.compiled_patterns:
             for match in pattern.finditer(text):
                 # 提取第一个捕获组作为键
@@ -56,9 +56,9 @@ class PatternMatcher:
                     start = match.start()
                     end = match.end()
                     matches.append((key, start, end))
-        
+
         return matches
-    
+
     def has_match(self, text: str) -> bool:
         """
         检查文本是否包含匹配项
@@ -73,7 +73,7 @@ class PatternMatcher:
             if pattern.search(text):
                 return True
         return False
-    
+
     def add_pattern(self, pattern: str) -> bool:
         """
         添加新的模式
@@ -107,25 +107,19 @@ def find_i18n_keys_in_text(text: str, patterns: List[str]) -> List[Dict[str, Any
     """
     results = []
     lines = text.split('\n')
-    
+
     matcher = PatternMatcher(patterns)
-    
+
     for line_no, line in enumerate(lines, 1):
         matches = matcher.find_matches(line)
-        
+
         for key, start, end in matches:
             # 计算列号
             col_no = start + 1
-            
-            results.append({
-                'key': key,
-                'line': line_no,
-                'column': col_no,
-                'start': start,
-                'end': end,
-                'match_text': line[start:end]
-            })
-    
+
+            results.append({'key': key, 'line': line_no, 'column': col_no, 'start': start, 'end': end,
+                'match_text': line[start:end]})
+
     return results
 
 
@@ -142,21 +136,21 @@ def should_ignore_path(path: str, ignore_patterns: List[str]) -> bool:
     """
     # 标准化路径
     normalized_path = path.replace('\\', '/')
-    
+
     for pattern in ignore_patterns:
         # 标准化模式
         normalized_pattern = pattern.replace('\\', '/')
-        
+
         # 支持glob模式匹配
         if fnmatch.fnmatch(normalized_path, normalized_pattern):
             return True
-        
+
         # 支持目录匹配
         if normalized_pattern.endswith('/**'):
             dir_pattern = normalized_pattern[:-3]
             if normalized_path.startswith(dir_pattern + '/') or normalized_path == dir_pattern:
                 return True
-    
+
     return False
 
 
@@ -173,13 +167,13 @@ def filter_files_by_extension(files: List[str], extensions: List[str]) -> List[s
     """
     if not extensions:
         return files
-    
+
     filtered = []
     for file_path in files:
         file_ext = get_file_extension(file_path)
         if file_ext in extensions:
             filtered.append(file_path)
-    
+
     return filtered
 
 
@@ -238,11 +232,10 @@ def create_key_pattern(key: str) -> str:
         str: 匹配模式
     """
     escaped_key = escape_regex_chars(key)
-    patterns = [
-        rf'(?<![a-zA-Z])t\([\'"`]{escaped_key}[\'"`]\)',  # t() but not preceded by any letter
-        rf'\$t\([\'"`]{escaped_key}[\'"`]\)',             # $t()
-        rf'i18n\.t\([\'"`]{escaped_key}[\'"`]\)',         # i18n.t()
+    patterns = [rf'(?<![a-zA-Z])t\([\'"`]{escaped_key}[\'"`]\)',  # t() but not preceded by any letter
+        rf'\$t\([\'"`]{escaped_key}[\'"`]\)',  # $t()
+        rf'i18n\.t\([\'"`]{escaped_key}[\'"`]\)',  # i18n.t()
         rf'(?<![a-zA-Z])_\([\'"`]{escaped_key}[\'"`]\)',  # _() but not preceded by any letter
-        rf'gettext\([\'"`]{escaped_key}[\'"`]\)'          # gettext()
+        rf'gettext\([\'"`]{escaped_key}[\'"`]\)'  # gettext()
     ]
-    return '|'.join(patterns) 
+    return '|'.join(patterns)

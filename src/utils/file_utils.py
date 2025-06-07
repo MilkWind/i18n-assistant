@@ -4,10 +4,11 @@
 提供文件读写、编码检测等工具函数。
 """
 
-import os
-import chardet
-from typing import Optional, List, Tuple
 import logging
+import os
+from typing import Optional, Tuple
+
+import chardet
 
 logger = logging.getLogger(__name__)
 
@@ -25,21 +26,21 @@ def detect_encoding(file_path: str) -> str:
     try:
         with open(file_path, 'rb') as f:
             raw_data = f.read(10240)  # 读取前10KB检测编码
-        
+
         if not raw_data:
             return 'utf-8'
-        
+
         result = chardet.detect(raw_data)
         encoding = result.get('encoding', 'utf-8')
-        
+
         # 处理一些特殊情况
         if encoding and encoding.lower() in ['ascii', 'utf-8-sig']:
             encoding = 'utf-8'
         elif not encoding:
             encoding = 'utf-8'
-            
+
         return encoding
-        
+
     except Exception as e:
         logger.warning(f"检测文件编码失败 {file_path}: {e}")
         return 'utf-8'
@@ -59,15 +60,15 @@ def read_file_safe(file_path: str, encoding: Optional[str] = None) -> Tuple[Opti
     if not os.path.exists(file_path):
         logger.error(f"文件不存在: {file_path}")
         return None, ""
-    
+
     if not encoding:
         encoding = detect_encoding(file_path)
-    
+
     try:
         with open(file_path, 'r', encoding=encoding, errors='ignore') as f:
             content = f.read()
         return content, encoding
-        
+
     except Exception as e:
         logger.error(f"读取文件失败 {file_path}: {e}")
         return None, ""
@@ -88,13 +89,13 @@ def write_file_safe(file_path: str, content: str, encoding: str = 'utf-8') -> bo
     try:
         # 确保目录存在
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        
+
         with open(file_path, 'w', encoding=encoding) as f:
             f.write(content)
-        
+
         logger.debug(f"文件写入成功: {file_path}")
         return True
-        
+
     except Exception as e:
         logger.error(f"写入文件失败 {file_path}: {e}")
         return False
@@ -147,14 +148,14 @@ def is_text_file(file_path: str) -> bool:
     try:
         with open(file_path, 'rb') as f:
             chunk = f.read(1024)
-        
+
         if not chunk:
             return True
-        
+
         # 检查是否包含空字节（二进制文件的特征）
         if b'\x00' in chunk:
             return False
-        
+
         # 尝试解码为文本
         try:
             chunk.decode('utf-8')
@@ -165,7 +166,7 @@ def is_text_file(file_path: str) -> bool:
                 return True
             except UnicodeDecodeError:
                 return False
-                
+
     except Exception:
         return False
 
@@ -183,15 +184,15 @@ def backup_file(file_path: str, backup_suffix: str = '.backup') -> Optional[str]
     """
     if not os.path.exists(file_path):
         return None
-    
+
     backup_path = file_path + backup_suffix
-    
+
     try:
         import shutil
         shutil.copy2(file_path, backup_path)
         logger.info(f"文件备份成功: {backup_path}")
         return backup_path
-        
+
     except Exception as e:
         logger.error(f"文件备份失败 {file_path}: {e}")
-        return None 
+        return None

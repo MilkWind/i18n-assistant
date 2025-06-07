@@ -138,11 +138,11 @@ class WelcomeWidget(QWidget):
         features_layout.setVerticalSpacing(15)  # 行间距
 
         features = [("🔍", "智能扫描", "自动扫描项目文件，识别所有国际化调用（支持 t(), $t(), i18n.t() 等多种模式）"),
-            ("📊", "覆盖率分析", "精确计算国际化覆盖率，分析各文件的国际化使用情况"),
-            ("⚠️", "问题检测", "检测缺失键、未使用键和不一致键，帮助您优化国际化配置"),
-            ("📈", "详细报告", "生成 JSON/文本格式的详细分析报告，支持导出和分享"),
-            ("🎯", "优化建议", "提供针对性的优化建议和精简建议，提升国际化质量"),
-            ("💾", "配置管理", "支持保存和加载配置文件，便于重复使用和团队协作")]
+                    ("📊", "覆盖率分析", "精确计算国际化覆盖率，分析各文件的国际化使用情况"),
+                    ("⚠️", "问题检测", "检测缺失键、未使用键和不一致键，帮助您优化国际化配置"),
+                    ("📈", "详细报告", "生成 JSON/文本格式的详细分析报告，支持导出和分享"),
+                    ("🎯", "优化建议", "提供针对性的优化建议和精简建议，提升国际化质量"),
+                    ("💾", "配置管理", "支持保存和加载配置文件，便于重复使用和团队协作")]
 
         # 按3行2列的方式添加功能项
         for index, (icon, title, desc) in enumerate(features):
@@ -276,15 +276,18 @@ class WelcomeWidget(QWidget):
         steps_layout = QVBoxLayout(steps_group)
 
         steps = [{"num": "1", "title": "配置项目", "desc": "在「配置」标签页中设置项目路径和国际化文件目录",
-            "details": ["📁 项目路径：选择要分析的项目根目录", "🌐 国际化目录：选择存放 i18n 文件的目录（如 locales、i18n）",
-                "📤 输出目录：设置分析结果的保存位置", "⚙️ 高级选项：配置扫描规则、忽略模式等"]},
-            {"num": "2", "title": "开始分析", "desc": "点击「分析」标签页或按 F5 开始智能分析",
-                "details": ["🔄 实时进度：查看扫描进度和当前处理的文件", "📝 分析日志：实时查看详细的分析过程",
-                    "⏸️ 随时停止：可以随时停止正在进行的分析", "⏱️ 时间显示：所有时间戳使用 yyyy-MM-dd HH:mm:ss 格式"]},
-            {"num": "3", "title": "查看结果", "desc": "在「结果」标签页查看详细的分析结果和报告",
-                "details": ["📊 统计概览：覆盖率、缺失键数量等关键指标", "⚠️ 缺失键：代码中使用但 i18n 文件中缺失的键",
-                    "🗑️ 未使用键：i18n 文件中定义但代码中未使用的键", "❌ 不一致键：在不同语言文件中存在不一致的键",
-                    "📈 文件覆盖率：各个文件的国际化覆盖情况", "💾 导出报告：支持导出 JSON 和文本格式报告"]}]
+                  "details": ["📁 项目路径：选择要分析的项目根目录",
+                              "🌐 国际化目录：选择存放 i18n 文件的目录（如 locales、i18n）",
+                              "📤 输出目录：设置分析结果的保存位置", "⚙️ 高级选项：配置扫描规则、忽略模式等"]},
+                 {"num": "2", "title": "开始分析", "desc": "点击「分析」标签页或按 F5 开始智能分析",
+                  "details": ["🔄 实时进度：查看扫描进度和当前处理的文件", "📝 分析日志：实时查看详细的分析过程",
+                              "⏸️ 随时停止：可以随时停止正在进行的分析",
+                              "⏱️ 时间显示：所有时间戳使用 yyyy-MM-dd HH:mm:ss 格式"]},
+                 {"num": "3", "title": "查看结果", "desc": "在「结果」标签页查看详细的分析结果和报告",
+                  "details": ["📊 统计概览：覆盖率、缺失键数量等关键指标", "⚠️ 缺失键：代码中使用但 i18n 文件中缺失的键",
+                              "🗑️ 未使用键：i18n 文件中定义但代码中未使用的键",
+                              "❌ 不一致键：在不同语言文件中存在不一致的键", "📈 文件覆盖率：各个文件的国际化覆盖情况",
+                              "💾 导出报告：支持导出 JSON 和文本格式报告"]}]
 
         for step in steps:
             step_widget = QWidget()
@@ -411,10 +414,10 @@ class WelcomeWidget(QWidget):
         faq_layout = QVBoxLayout(faq_group)
 
         faqs = [("Q: 支持哪些文件类型？", "A: 默认支持 .js, .ts, .jsx, .tsx, .vue, .py, .html 等文件，可在配置中自定义。"),
-            ("Q: 如何添加自定义的国际化调用模式？", "A: 在配置页面的「高级设置」中，可以添加自定义的正则表达式模式。"),
-            ("Q: 分析结果保存在哪里？", "A: 默认保存在项目根目录的 i18n-analysis 文件夹中，可在配置中修改。"),
-            ("Q: 可以分析大型项目吗？", "A: 支持多线程并行处理，可根据机器性能调整线程数量，适合大型项目。"),
-            ("Q: 如何与团队成员分享配置？", "A: 使用配置保存功能，将配置文件提交到版本控制系统即可分享。")]
+                ("Q: 如何添加自定义的国际化调用模式？", "A: 在配置页面的「高级设置」中，可以添加自定义的正则表达式模式。"),
+                ("Q: 分析结果保存在哪里？", "A: 默认保存在项目根目录的 i18n-analysis 文件夹中，可在配置中修改。"),
+                ("Q: 可以分析大型项目吗？", "A: 支持多线程并行处理，可根据机器性能调整线程数量，适合大型项目。"),
+                ("Q: 如何与团队成员分享配置？", "A: 使用配置保存功能，将配置文件提交到版本控制系统即可分享。")]
 
         for question, answer in faqs:
             faq_widget = QWidget()
@@ -755,7 +758,7 @@ class MainWindow(QMainWindow):
 
         # 选择保存路径
         file_path, _ = QFileDialog.getSaveFileName(self, "保存配置文件", "i18n-assistant-config.json",
-            "JSON配置文件 (*.json);;所有文件 (*)")
+                                                   "JSON配置文件 (*.json);;所有文件 (*)")
 
         if file_path:
             try:
@@ -809,7 +812,7 @@ class MainWindow(QMainWindow):
     def clear_results(self) -> None:
         """清空结果"""
         reply = QMessageBox.question(self, "确认", "确定要清空所有分析结果吗？",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
         if reply == QMessageBox.StandardButton.Yes:
             self.result_widget.clear_results()
@@ -925,7 +928,7 @@ class MainWindow(QMainWindow):
         # 如果正在分析，询问是否确定关闭
         if self.analysis_widget.is_analyzing():
             reply = QMessageBox.question(self, "确认退出", "正在进行分析，确定要退出吗？",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
             if reply == QMessageBox.StandardButton.No:
                 event.ignore()
@@ -941,72 +944,72 @@ class MainWindow(QMainWindow):
         try:
             if not self.config:
                 return
-            
+
             # 检查是否启用自动优化
             auto_optimize = getattr(self.config, 'auto_optimize', True)
-            
+
             if not auto_optimize:
                 return
-                
+
             analysis_result = results['analysis_result']
             parse_result = results.get('parse_result')
-            
+
             if not parse_result:
                 return
-            
+
             # 检查是否有需要优化的内容
             has_unused_keys = analysis_result.unused_keys and len(analysis_result.unused_keys) > 0
             has_missing_keys = analysis_result.missing_keys and len(analysis_result.missing_keys) > 0
-            
+
             if not has_unused_keys and not has_missing_keys:
                 print("[INFO] 没有发现未使用键或缺失键，跳过优化文件生成")
                 return
-            
+
             # 进一步检查：模拟优化过程以确定是否真的有文件需要修改
             print("[INFO] 预检查优化内容...")
             has_actual_optimization = self._check_has_actual_optimization(analysis_result, parse_result)
-            
+
             if not has_actual_optimization:
                 print("[INFO] 预检查发现没有实际需要优化的文件，跳过优化文件生成")
                 return
-            
+
             # 创建优化器
             optimizer = I18nOptimizer(self.config)
-            
+
             # 执行优化
             self.status_label.setText("正在生成优化文件...")
             optimization_result = optimizer.optimize(analysis_result, parse_result)
-            
+
             # 更新状态
             if optimization_result.removed_keys_count > 0 or optimization_result.added_keys_count > 0:
                 self.status_label.setText(f"优化完成 - 移除 {optimization_result.removed_keys_count} 个未使用键，"
-                                           f"添加 {optimization_result.added_keys_count} 个缺失键")
-                
+                                          f"添加 {optimization_result.added_keys_count} 个缺失键")
+
                 # 在结果中保存优化信息
                 results['optimization_result'] = optimization_result
             else:
                 print("[INFO] 没有生成实际的优化文件")
-            
+
         except Exception as e:
             error_msg = f"生成优化文件时发生错误: {str(e)}"
             self.status_label.setText(error_msg)  # 不阻止主流程，只显示错误但不弹出对话框
-    
+
     def _check_has_actual_optimization(self, analysis_result, parse_result) -> bool:
         """检查是否真的有需要优化的文件内容"""
         try:
             from collections import defaultdict
-            
+
             # 准备优化数据（复制自优化器的逻辑）
             unused_keys_by_file = defaultdict(set)
             for unused_key in analysis_result.unused_keys:
                 unused_keys_by_file[unused_key.i18n_file].add(unused_key.key)
-            
+
             missing_keys_by_file = defaultdict(dict)
             for missing_key in analysis_result.missing_keys:
                 if missing_key.suggested_files:
                     for suggested_file in missing_key.suggested_files:
                         missing_keys_by_file[suggested_file][missing_key.key] = ""
-            
+
             # 处理每个国际化文件（复制自优化器的逻辑）
             if hasattr(parse_result, 'files'):
                 i18n_files = parse_result.files
@@ -1014,59 +1017,59 @@ class MainWindow(QMainWindow):
                 i18n_files = parse_result
             else:
                 i18n_files = [parse_result] if hasattr(parse_result, 'file_path') else []
-            
+
             for file_info in i18n_files:
                 if not hasattr(file_info, 'file_path') or not file_info.file_path or getattr(file_info, 'error', None):
                     continue
-                    
+
                 file_path = file_info.file_path
                 original_data = getattr(file_info, 'data', {})
-                
+
                 # 获取当前文件的未使用键和缺失键
                 unused_keys_for_file = unused_keys_by_file.get(file_path, set())
                 missing_keys_for_file = missing_keys_by_file.get(file_path, {})
-                
+
                 # 模拟优化过程，检查是否会有实际修改
                 would_have_changes = False
-                
+
                 # 检查未使用键是否真的存在于文件中
                 for unused_key in unused_keys_for_file:
                     if self._key_exists_in_data(original_data, unused_key):
                         would_have_changes = True
                         break
-                
+
                 # 检查缺失键是否真的不存在于文件中
                 if not would_have_changes:
                     for missing_key in missing_keys_for_file:
                         if not self._key_exists_in_data(original_data, missing_key):
                             would_have_changes = True
                             break
-                
+
                 if would_have_changes:
                     print(f"[INFO] 发现文件 {file_path} 有实际需要优化的内容")
                     return True
-            
+
             return False
-            
+
         except Exception as e:
             print(f"[WARNING] 预检查过程中发生错误: {e}，将继续执行优化")
             return True  # 发生错误时，保守地假设需要优化
-    
+
     def _key_exists_in_data(self, data, key_path):
         """检查键是否存在于数据中"""
         try:
             if not key_path:
                 return False
-                
+
             keys = key_path.split('.')
             current = data
-            
+
             for key in keys:
                 if isinstance(current, dict) and key in current:
                     current = current[key]
                 else:
                     return False
-            
+
             return True
         except Exception:
             return False
