@@ -1,6 +1,7 @@
 # Custom ignore rules
 i18n-analysis/
 phases_record/
+phase2_output/
 i18n-assistant-config.json
 
 # Byte-compiled / optimized / DLL files

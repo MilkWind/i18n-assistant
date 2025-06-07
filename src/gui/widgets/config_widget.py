@@ -170,14 +170,20 @@ class ConfigWidget(QWidget):
         self.max_threads_spin.setValue(4)
         layout.addWidget(self.max_threads_spin, 0, 1)
         
+        # 自动优化选项
+        layout.addWidget(QLabel("自动优化:"), 1, 0)
+        self.auto_optimize_checkbox = QCheckBox("分析完成后自动生成优化文件")
+        self.auto_optimize_checkbox.setChecked(True)  # 默认启用
+        layout.addWidget(self.auto_optimize_checkbox, 1, 1)
+
         # 自定义i18n模式
-        layout.addWidget(QLabel("自定义i18n模式 (每行一个):"), 1, 0, 1, 2)
+        layout.addWidget(QLabel("自定义i18n模式 (每行一个):"), 2, 0, 1, 2)
         self.i18n_patterns_edit = QTextEdit()
         self.i18n_patterns_edit.setMaximumHeight(80)
         self.i18n_patterns_edit.setPlaceholderText(
             "t\\(['\"`](.*?)['\"`]\\)\n\\$t\\(['\"`](.*?)['\"`]\\)"
         )
-        layout.addWidget(self.i18n_patterns_edit, 2, 0, 1, 2)
+        layout.addWidget(self.i18n_patterns_edit, 3, 0, 1, 2)
         
         return group
         
@@ -228,6 +234,7 @@ class ConfigWidget(QWidget):
         
         # 高级设置
         self.max_threads_spin.setValue(self.config.max_threads)
+        self.auto_optimize_checkbox.setChecked(getattr(self.config, 'auto_optimize', True))
         self.i18n_patterns_edit.setPlainText('\n'.join(self.config.i18n_patterns))
         
     def get_config(self) -> Config:
@@ -261,6 +268,9 @@ class ConfigWidget(QWidget):
             max_threads=self.max_threads_spin.value(),
             i18n_patterns=i18n_patterns
         )
+        
+        # 添加自动优化设置
+        config.auto_optimize = self.auto_optimize_checkbox.isChecked()
         
         return config
         

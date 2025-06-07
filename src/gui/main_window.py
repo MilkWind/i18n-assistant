@@ -23,6 +23,7 @@ from PyQt6.QtGui import QIcon, QPixmap, QFont, QAction
 
 from .widgets import ConfigWidget, AnalysisWidget, ResultWidget
 from ..core.config import Config
+from ..core.optimizer import I18nOptimizer
 
 
 class WelcomeWidget(QWidget):
@@ -914,15 +915,31 @@ class MainWindow(QMainWindow):
             f"分析完成 - 覆盖率: {analysis_result.coverage_percentage:.1f}%"
         )
         
-        # 可选：显示通知
-        QMessageBox.information(
-            self, "分析完成", 
+        # 自动生成优化文件
+        self._auto_generate_optimized_files(results)
+        
+        # 构建通知消息
+        message = (
             f"分析已完成！\n\n"
             f"覆盖率: {analysis_result.coverage_percentage:.1f}%\n"
             f"缺失键: {len(analysis_result.missing_keys)} 个\n"
             f"未使用键: {len(analysis_result.unused_keys)} 个\n"
             f"不一致键: {len(analysis_result.inconsistent_keys)} 个"
         )
+        
+        # 如果启用了自动优化且有优化结果，添加优化信息
+        if getattr(self.config, 'auto_optimize', True) and 'optimization_result' in results:
+            optimization_result = results['optimization_result']
+            message += (
+                f"\n\n已自动生成优化后的国际化文件：\n"
+                f"• 移除未使用键: {optimization_result.removed_keys_count} 个\n"
+                f"• 添加缺失键: {optimization_result.added_keys_count} 个\n"
+                f"• 优化文件数: {len(optimization_result.optimized_files)} 个\n\n"
+                f"请查看输出目录中的 optimized 文件夹。"
+            )
+        
+        # 显示通知
+        QMessageBox.information(self, "分析完成", message)
         
     def on_analysis_error(self, error: str) -> None:
         """分析错误处理"""
@@ -969,6 +986,45 @@ class MainWindow(QMainWindow):
                 self.analysis_widget.stop_analysis()
                 
         event.accept()
+
+    def _auto_generate_optimized_files(self, results) -> None:
+        """自动生成优化后的国际化文件"""
+        try:
+            if not self.config:
+                return
+            
+            # 检查是否启用自动优化
+            auto_optimize = getattr(self.config, 'auto_optimize', True)
+            
+            if not auto_optimize:
+                return
+                
+            analysis_result = results['analysis_result']
+            parse_result = results.get('parse_result')
+            
+            if not parse_result:
+                return
+            
+            # 创建优化器
+            optimizer = I18nOptimizer(self.config)
+            
+            # 执行优化
+            self.status_label.setText("正在生成优化文件...")
+            optimization_result = optimizer.optimize(analysis_result, parse_result)
+            
+            # 更新状态
+            self.status_label.setText(
+                f"优化完成 - 移除 {optimization_result.removed_keys_count} 个未使用键，"
+                f"添加 {optimization_result.added_keys_count} 个缺失键"
+            )
+            
+            # 在结果中保存优化信息
+            results['optimization_result'] = optimization_result
+            
+        except Exception as e:
+            error_msg = f"生成优化文件时发生错误: {str(e)}"
+            self.status_label.setText(error_msg)
+            # 不阻止主流程，只显示错误但不弹出对话框
 
 
 def create_application() -> QApplication:

@@ -16,6 +16,10 @@ i18n-assistant 是一个基于Python的国际化文件分析工具，用于检�
 - 📊 **覆盖率分析**: 计算国际化覆盖率和使用统计
 - ⚠️ **问题检测**: 识别缺失、未使用和不一致的键
 - 📈 **详细报告**: 生成多格式的分析报告
+- ⚡ **自动优化**: 自动生成移除未使用键、添加缺失键的优化文件
+- 📁 **智能会话管理**: 基于项目名和时间戳的自动目录分类
+- 🗂️ **项目隔离**: 不同项目和时间的分析结果完全分离
+- 🔒 **安全备份**: 自动创建原文件备份，确保数据安全
 - 🎯 **优化建议**: 提供精简文件和修复建议
 - 🖥️ **现代GUI**: 直观易用的图形界面
 
@@ -76,8 +80,10 @@ python main.py --cli --test scanner --project-path /path/to/your/project
 
 1. **启动程序**：运行 `python main.py` 或 `python gui_app.py`
 2. **配置路径**：在配置页面设置项目路径和国际化文件目录
-3. **开始分析**：点击"开始分析"按钮
-4. **查看结果**：在结果页面查看分析报告和统计信息
+3. **配置选项**：在高级设置中可以开启/关闭自动优化功能（默认开启）
+4. **开始分析**：点击"开始分析"按钮
+5. **查看结果**：在结果页面查看分析报告、统计信息和优化结果
+6. **访问文件**：使用"查看优化文件"按钮快速打开最新的会话目录
 
 ### 界面功能详解
 
@@ -89,7 +95,7 @@ python main.py --cli --test scanner --project-path /path/to/your/project
 - **路径设置**: 设置项目路径、国际化目录、输出目录
 - **扫描设置**: 选择文件类型、配置忽略模式
 - **输出设置**: 选择解析器类型、文件编码
-- **高级设置**: 配置线程数、自定义i18n模式
+- **高级设置**: 配置线程数、自动优化开关、自定义i18n模式
 
 ### 3. 分析页面
 - 实时查看分析进度
@@ -97,9 +103,11 @@ python main.py --cli --test scanner --project-path /path/to/your/project
 - 控制分析过程
 
 ### 4. 结果页面
-- 查看覆盖率统计
-- 浏览详细问题列表
-- 导出分析报告
+- 查看覆盖率统计和优化统计
+- 浏览详细问题列表（缺失键、未使用键、不一致键、文件覆盖率）
+- 导出分析报告（JSON/文本格式）
+- 查看优化文件和备份文件
+- 一键打开最新会话目录和优化文件目录
 
 ## 📦 应用程序打包
 
@@ -144,6 +152,7 @@ i18n-assistant/
 │   │   ├── scanner.py           # 文件扫描
 │   │   ├── parser.py            # 国际化文件解析
 │   │   ├── analyzer.py          # 分析引擎
+│   │   ├── optimizer.py         # 文件优化器
 │   │   └── reporter.py          # 报告生成
 │   ├── gui/                      # GUI界面模块
 │   │   ├── main_window.py       # 主窗口
@@ -154,7 +163,12 @@ i18n-assistant/
 │   ├── parsers/                  # 解析器模块
 │   └── utils/                    # 工具函数
 ├── tests/                        # 测试文件
-├── phase2_output/               # 分析结果输出
+├── i18n-analysis/               # 分析结果输出
+│   ├── [项目名 2025-06-07 15_10_40]/  # 会话目录
+│   │   ├── optimized/           # 优化后的国际化文件
+│   │   ├── backup/              # 原文件备份
+│   │   └── reports/             # 分析和优化报告
+│   └── [项目名 2025-06-07 16_20_15]/  # 另一个会话目录
 ├── test_i18n/                  # 测试用国际化文件
 ├── main.py                      # 主入口文件
 ├── gui_app.py                   # GUI专用启动器
@@ -184,17 +198,49 @@ i18n-assistant/
 
 ## 📊 分析结果
 
+### 会话目录管理
+- **自动分类**: 每次分析创建独特的会话目录 `[项目名 yyyy-MM-dd HH_MM_SS]`
+- **项目隔离**: 不同项目的分析结果完全分离，避免文件覆盖
+- **历史追踪**: 保留所有分析历史，便于对比不同时间的分析结果
+- **智能定位**: GUI自动定位到最新的会话目录
+
+### 目录结构
+```
+i18n-analysis/
+└── my-project 2025-06-07 15_10_40/    # 会话目录
+    ├── backup/                         # 原文件备份
+    │   ├── en.json
+    │   └── zh.json
+    ├── optimized/                      # 优化后文件
+    │   ├── en.json      (移除未使用键，添加缺失键)
+    │   └── zh.json      (移除未使用键，添加缺失键)
+    └── reports/                        # 分析报告
+        ├── analysis_report.txt         # 详细文本报告
+        ├── analysis_report.json        # 结构化JSON报告
+        └── optimization_report.json    # 优化操作报告
+```
+
 ### 统计信息
 - **总键数**: 国际化文件中定义的键总数
 - **覆盖率**: 代码中使用的键占总键数的百分比
 - **缺失键**: 代码中使用但国际化文件中未定义的键
 - **未使用键**: 国际化文件中定义但代码中未使用的键
 - **不一致键**: 不同语言文件间不一致的键
+- **已移除键**: 优化过程中移除的未使用键数量
+- **已添加键**: 优化过程中添加的缺失键数量（值为空字符串）
 
 ### 报告格式
 - **文本报告**: 人类可读的详细分析报告
 - **JSON报告**: 机器可读的结构化数据
-- **优化文件**: 移除未使用键的精简国际化文件
+- **优化文件**: 移除未使用键、添加缺失键的优化国际化文件
+- **备份文件**: 原始文件的安全备份
+- **优化报告**: 详细的优化操作记录和统计信息
+
+### 文件管理特性
+- **扁平化存储**: 优化和备份文件直接存储，不保留原目录结构
+- **自动创建**: 程序会自动创建所需的输出目录结构
+- **时间戳命名**: 使用 `HH_MM_SS` 格式避免文件系统冲突
+- **无覆盖风险**: 每次分析都有独立的会话目录
 
 ## 🛠️ 开发指南
 
@@ -256,13 +302,14 @@ python main.py --cli --test all --project-path /path/to/project --i18n-path /pat
 ### 编程接口示例
 
 ```python
-from src.core import ConfigManager, FileScanner, I18nFileParser, AnalysisEngine
+from src.core import ConfigManager, FileScanner, I18nFileParser, AnalysisEngine, I18nOptimizer
 
 # 创建配置
 config_manager = ConfigManager()
 config_manager.update_config(
     project_path="/path/to/project",
-    i18n_path="/path/to/i18n"
+    i18n_path="/path/to/i18n",
+    auto_optimize=True  # 启用自动优化
 )
 config = config_manager.get_config()
 
@@ -279,6 +326,15 @@ analyzer = AnalysisEngine()
 analysis_result = analyzer.analyze(scan_result, parse_result)
 
 print(f"覆盖率: {analysis_result.coverage_percentage:.1f}%")
+
+# 自动优化（如果启用）
+if config.auto_optimize:
+    optimizer = I18nOptimizer(config)
+    optimization_result = optimizer.optimize(analysis_result, parse_result)
+    print(f"会话目录: {optimization_result.session_dir}")
+    print(f"移除未使用键: {optimization_result.removed_keys_count} 个")
+    print(f"添加缺失键: {optimization_result.added_keys_count} 个")
+    print(f"优化文件已保存到: {config.output_path}/{optimization_result.session_dir}/optimized/")
 ```
 
 ## 🤝 贡献指南
@@ -293,7 +349,25 @@ print(f"覆盖率: {analysis_result.coverage_percentage:.1f}%")
 
 ## 📝 更新日志
 
-### v1.0.1 (当前版本)
+### v1.2.0 (最新版本)
+- 🗂️ **智能会话管理**: 基于项目名和时间戳的自动目录分类
+- 📁 **项目隔离**: 不同项目和时间的分析结果完全分离，避免文件覆盖
+- 🕐 **历史追踪**: 保留所有分析历史，便于对比不同时间的分析结果
+- 📋 **扁平化存储**: 优化和备份文件采用扁平化存储，便于查找
+- 🔧 **Windows兼容**: 时间戳格式优化，完全兼容Windows文件系统
+- 🎯 **智能定位**: GUI按钮自动定位到最新的会话目录
+- 📊 **会话信息**: 在优化结果中包含会话目录信息
+
+### v1.1.0
+- ⚡ **新增自动优化功能**: 分析完成后自动生成优化后的国际化文件
+- 📁 **智能目录管理**: 自动创建输出目录、优化目录和备份目录
+- 🔧 **优化统计**: 新增已移除键和已添加键的统计显示
+- 🎯 **一键操作**: 结果页面新增"查看优化文件"按钮，快速访问优化结果
+- 📈 **详细报告**: 新增优化操作的详细报告（JSON和文本格式）
+- 🛡️ **安全备份**: 原文件自动备份，确保数据安全
+- 🎮 **用户体验**: 目录不存在时自动创建，无需手动操作
+
+### v1.0.1 
 - 🔧 优化正则表达式匹配算法，避免误匹配其他方法中的t或_
 - 🎨 改进结果页面布局，支持上下分割线拖拽调整
 - 🐛 修复导出功能异常，现在正确导出报告内容而非路径

@@ -20,7 +20,9 @@ class TestConfig:
         
         assert config.project_path == ""
         assert config.i18n_path == ""
-        assert config.output_path == "./i18n-analysis"
+        # 输出路径现在是绝对路径，默认为i18n-analysis
+        assert os.path.isabs(config.output_path)
+        assert config.output_path.endswith("i18n-analysis")
         assert config.max_threads == 4
         assert config.encoding == "utf-8"
         assert config.parser_type == "json"
@@ -51,24 +53,31 @@ class TestConfigManager:
     
     def test_save_and_load_config(self):
         """测试保存和加载配置"""
+        # 使用相对路径进行测试
+        test_project_path = "./test/project"
+        test_i18n_path = "./test/i18n"
+        
         # 修改配置
         self.config_manager.update_config(
-            project_path="/test/project",
-            i18n_path="/test/i18n",
+            project_path=test_project_path,
+            i18n_path=test_i18n_path,
             max_threads=8
         )
-        
+
         # 保存配置
         success = self.config_manager.save_config(self.config_file)
         assert success
         assert os.path.exists(self.config_file)
-        
+
         # 创建新的管理器并加载配置
         new_manager = ConfigManager(self.config_file)
         loaded_config = new_manager.load_config()
-        
-        assert loaded_config.project_path == "/test/project"
-        assert loaded_config.i18n_path == "/test/i18n"
+
+        # 验证路径被转换为绝对路径，但包含预期的部分
+        assert os.path.isabs(loaded_config.project_path)
+        assert os.path.isabs(loaded_config.i18n_path)
+        assert loaded_config.project_path.endswith(os.path.join("test", "project"))
+        assert loaded_config.i18n_path.endswith(os.path.join("test", "i18n"))
         assert loaded_config.max_threads == 8
     
     def test_validate_config(self):

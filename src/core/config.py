@@ -20,7 +20,22 @@ class Config:
     # 基本路径配置
     project_path: str = ""
     i18n_path: str = ""
-    output_path: str = "./i18n-analysis"
+    output_path: str = ""
+    
+    def __post_init__(self):
+        """配置初始化后处理"""
+        # 如果output_path为空，设置默认值并转换为绝对路径
+        if not self.output_path:
+            self.output_path = os.path.abspath("./i18n-analysis")
+        else:
+            # 确保现有路径也是绝对路径
+            self.output_path = os.path.abspath(self.output_path)
+        
+        # 确保其他路径也是绝对路径
+        if self.project_path:
+            self.project_path = os.path.abspath(self.project_path)
+        if self.i18n_path:
+            self.i18n_path = os.path.abspath(self.i18n_path)
     
     # 忽略模式配置
     ignore_patterns: List[str] = field(default_factory=lambda: [
@@ -52,6 +67,7 @@ class Config:
     # 输出配置
     generate_cleaned_files: bool = True
     report_format: str = "text"  # text, json, html
+    auto_optimize: bool = True  # 自动优化开关
 
 
 class ConfigManager:
@@ -192,6 +208,9 @@ class ConfigManager:
         """
         for key, value in kwargs.items():
             if hasattr(self.config, key):
+                # 对路径字段进行特殊处理，转换为绝对路径
+                if key in ['project_path', 'i18n_path', 'output_path'] and value:
+                    value = os.path.abspath(value)
                 setattr(self.config, key, value)
             else:
                 logger.warning(f"未知的配置项: {key}")
@@ -205,6 +224,9 @@ class ConfigManager:
         """
         for key, value in config_data.items():
             if hasattr(self.config, key):
+                # 对路径字段进行特殊处理，转换为绝对路径
+                if key in ['project_path', 'i18n_path', 'output_path'] and value:
+                    value = os.path.abspath(value)
                 setattr(self.config, key, value)
             else:
                 logger.warning(f"忽略未知配置项: {key}")
@@ -227,7 +249,8 @@ class ConfigManager:
             'max_threads': self.config.max_threads,
             'encoding': self.config.encoding,
             'generate_cleaned_files': self.config.generate_cleaned_files,
-            'report_format': self.config.report_format
+            'report_format': self.config.report_format,
+            'auto_optimize': self.config.auto_optimize
         }
     
     def reset_to_default(self) -> None:

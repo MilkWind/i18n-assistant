@@ -62,14 +62,15 @@ class StatsWidget(QWidget):
 
         self.stats_cards = {}
         stats_items = [("total_keys", "总键数", "#2196F3"), ("missing_keys", "缺失键", "#F44336"),
-            ("unused_keys", "未使用键", "#FF9800"), ("inconsistent_keys", "不一致键", "#9C27B0")]
+            ("unused_keys", "未使用键", "#FF9800"), ("inconsistent_keys", "不一致键", "#9C27B0"),
+            ("removed_keys", "已移除键", "#4CAF50"), ("added_keys", "已添加键", "#2196F3")]
 
-        # 按2x2网格布局添加卡片
+        # 按3x2网格布局添加卡片
         for i, (key, label, color) in enumerate(stats_items):
             card = self.create_stat_card(label, "0", color)
             self.stats_cards[key] = card
-            row = i // 2  # 行号：0, 0, 1, 1
-            col = i % 2  # 列号：0, 1, 0, 1
+            row = i // 2  # 行号：0, 0, 1, 1, 2, 2
+            col = i % 2  # 列号：0, 1, 0, 1, 0, 1
             stats_layout.addWidget(card, row, col)
 
         # 设置列拉伸
@@ -173,7 +174,7 @@ class StatsWidget(QWidget):
 
         return widget
 
-    def update_stats(self, analysis_result) -> None:
+    def update_stats(self, analysis_result, optimization_result=None) -> None:
         """更新统计信息"""
         try:
             # 安全获取属性并更新覆盖率
@@ -191,6 +192,16 @@ class StatsWidget(QWidget):
             self.stats_cards["missing_keys"].value_label.setText(str(len(missing_keys)))
             self.stats_cards["unused_keys"].value_label.setText(str(len(unused_keys)))
             self.stats_cards["inconsistent_keys"].value_label.setText(str(len(inconsistent_keys)))
+            
+            # 更新优化结果统计
+            if optimization_result:
+                removed_keys_count = getattr(optimization_result, 'removed_keys_count', 0)
+                added_keys_count = getattr(optimization_result, 'added_keys_count', 0)
+                self.stats_cards["removed_keys"].value_label.setText(str(removed_keys_count))
+                self.stats_cards["added_keys"].value_label.setText(str(added_keys_count))
+            else:
+                self.stats_cards["removed_keys"].value_label.setText("0")
+                self.stats_cards["added_keys"].value_label.setText("0")
 
         except Exception as e:
             print(f"Error updating stats: {e}")
@@ -278,10 +289,14 @@ class ResultWidget(QWidget):
 
         self.open_output_button = QPushButton("打开输出目录")
         self.open_output_button.clicked.connect(self.open_output_directory)
+        
+        self.open_optimized_button = QPushButton("查看优化文件")
+        self.open_optimized_button.clicked.connect(self.open_optimized_directory)
 
         button_layout.addWidget(self.export_json_button)
         button_layout.addWidget(self.export_text_button)
         button_layout.addStretch()
+        button_layout.addWidget(self.open_optimized_button)
         button_layout.addWidget(self.open_output_button)
 
         layout.addLayout(button_layout)
@@ -536,8 +551,9 @@ class ResultWidget(QWidget):
         self.analysis_results = results
         analysis_result = results['analysis_result']
 
-        # 更新统计信息
-        self.stats_widget.update_stats(analysis_result)
+        # 更新统计信息（包含优化结果）
+        optimization_result = results.get('optimization_result')
+        self.stats_widget.update_stats(analysis_result, optimization_result)
 
         # 更新表格
         self.update_missing_keys_table(analysis_result.missing_keys)
@@ -855,26 +871,79 @@ class ResultWidget(QWidget):
             return
 
         try:
-            # 获取配置中的输出路径
+            # 优先使用优化结果中的会话目录信息
+            optimization_result = self.analysis_results.get('optimization_result')
             config = self.analysis_results.get('config')
-            if config and hasattr(config, 'output_path'):
-                output_path = config.output_path
+            
+            if optimization_result and hasattr(optimization_result, 'session_dir') and optimization_result.session_dir:
+                # 使用会话特定的目录
+                if config and hasattr(config, 'output_path'):
+                    base_output_path = os.path.abspath(config.output_path)
+                else:
+                    base_output_path = os.path.abspath("./i18n-analysis")
+                
+                session_output_path = os.path.join(base_output_path, optimization_result.session_dir)
+                target_path = session_output_path
             else:
-                output_path = "./phase2_output"  # 默认输出目录
+                # 回退到传统的输出目录
+                if config and hasattr(config, 'output_path'):
+                    target_path = os.path.abspath(config.output_path)
+                else:
+                    target_path = os.path.abspath("./i18n-analysis")
 
-            if os.path.exists(output_path):
-                os.startfile(output_path)  # Windows
-            else:
-                QMessageBox.warning(self, "警告", f"输出目录不存在: {output_path}")
+            # 确保目录存在，不存在则创建
+            if not os.path.exists(target_path):
+                os.makedirs(target_path, exist_ok=True)
+                QMessageBox.information(self, "信息", f"已创建输出目录: {target_path}")
+            
+            os.startfile(target_path)  # Windows
 
         except Exception as e:
             QMessageBox.critical(self, "错误", f"打开输出目录失败: {str(e)}")
+            
+    def open_optimized_directory(self) -> None:
+        """打开优化文件目录"""
+        if not self.analysis_results:
+            return
+
+        try:
+            # 优先使用优化结果中的会话目录信息
+            optimization_result = self.analysis_results.get('optimization_result')
+            config = self.analysis_results.get('config')
+            
+            if optimization_result and hasattr(optimization_result, 'session_dir') and optimization_result.session_dir:
+                # 使用会话特定的优化目录
+                if config and hasattr(config, 'output_path'):
+                    base_output_path = os.path.abspath(config.output_path)
+                else:
+                    base_output_path = os.path.abspath("./i18n-analysis")
+                
+                optimized_path = os.path.join(base_output_path, optimization_result.session_dir, "optimized")
+            else:
+                # 回退到传统的优化目录
+                if config and hasattr(config, 'output_path'):
+                    base_output_path = os.path.abspath(config.output_path)
+                else:
+                    base_output_path = os.path.abspath("./i18n-analysis")
+                
+                optimized_path = os.path.join(base_output_path, "optimized")
+
+            # 确保目录存在，不存在则创建
+            if not os.path.exists(optimized_path):
+                os.makedirs(optimized_path, exist_ok=True)
+                QMessageBox.information(self, "信息", f"已创建优化文件目录: {optimized_path}")
+            
+            os.startfile(optimized_path)  # Windows
+
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"打开优化文件目录失败: {str(e)}")
 
     def set_buttons_enabled(self, enabled: bool) -> None:
         """设置按钮启用状态"""
         self.export_json_button.setEnabled(enabled)
         self.export_text_button.setEnabled(enabled)
         self.open_output_button.setEnabled(enabled)
+        self.open_optimized_button.setEnabled(enabled)
 
     def clear_results(self) -> None:
         """清空结果"""

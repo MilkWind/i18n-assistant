@@ -21,6 +21,11 @@ class ReportGenerator:
         self.config = config
         self.output_path = Path(config.output_path)
         self.output_path.mkdir(parents=True, exist_ok=True)
+        self.session_dir = ""  # 会话目录
+    
+    def set_session_directory(self, session_dir: str) -> None:
+        """设置会话目录"""
+        self.session_dir = session_dir
     
     def generate_full_report(
         self, 
@@ -37,6 +42,14 @@ class ReportGenerator:
         Returns:
             str: 报告文件路径
         """
+        # 确定报告输出路径
+        if self.session_dir:
+            reports_path = self.output_path / self.session_dir / "reports"
+        else:
+            reports_path = self.output_path / "reports"
+        
+        reports_path.mkdir(parents=True, exist_ok=True)
+        
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         report_lines = []
         
@@ -200,46 +213,41 @@ class ReportGenerator:
                 report_lines.extend([
                     f"\n文件: {file_path}",
                     f"  总调用数: {coverage.total_calls}",
-                    f"  总体已覆盖: {coverage.covered_calls}",
-                    f"  总体未覆盖: {coverage.uncovered_calls}",
-                    f"  总体覆盖率: {coverage.coverage_percentage:.2f}%",
+                    f"  覆盖调用数: {coverage.covered_calls}",
+                    f"  覆盖率: {coverage.coverage_percentage:.2f}%",
                 ])
-                
-                # 添加各国际化文件中的覆盖情况
-                i18n_coverages = getattr(coverage, 'i18n_coverages', {})
-                if i18n_coverages:
-                    report_lines.append("  各国际化文件中的覆盖情况:")
-                    for i18n_file, i18n_coverage in i18n_coverages.items():
-                        report_lines.extend([
-                            f"    {i18n_file}:",
-                            f"      覆盖调用数: {i18n_coverage.covered_calls}",
-                            f"      未覆盖调用数: {i18n_coverage.uncovered_calls}",
-                            f"      覆盖率: {i18n_coverage.coverage_percentage:.2f}%"
-                        ])
         
-        # 分析建议
+        # 建议部分
+        suggestions = self._generate_suggestions(analysis_result)
+        if suggestions:
+            report_lines.extend([
+                "",
+                "=" * 60,
+                "6. 改进建议",
+                "=" * 60,
+            ])
+            report_lines.extend(suggestions)
+        
+        # 报告尾部
         report_lines.extend([
             "",
             "=" * 60,
-            "6. 分析建议",
+            "报告结束",
             "=" * 60,
         ])
         
-        suggestions = self._generate_suggestions(analysis_result)
-        report_lines.extend(suggestions)
-        
-        # 写入报告文件
+        # 写入文件
         report_content = "\n".join(report_lines)
-        report_file = self.output_path / f"analysis_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        report_file = reports_path / "analysis_report.txt"
         
         with open(report_file, 'w', encoding='utf-8') as f:
             f.write(report_content)
         
         return str(report_file)
-    
+
     def generate_text_report(self, analysis_result: AnalysisResult) -> str:
         """
-        生成文本报告 (别名方法，为了兼容性)
+        生成简化的文本报告
         
         Args:
             analysis_result: 分析结果
@@ -247,18 +255,26 @@ class ReportGenerator:
         Returns:
             str: 报告文件路径
         """
-        # This is an alias for generate_full_report for backward compatibility
-        from .parser import ParseResult
-        # Create a minimal ParseResult for compatibility
-        parse_result = ParseResult(
-            files=[],
-            total_keys=set(),
-            duplicate_keys={},
-            inconsistent_keys={},
-            parse_errors=[]
-        )
-        return self.generate_full_report(analysis_result, parse_result)
-    
+        # 确定报告输出路径
+        if self.session_dir:
+            reports_path = self.output_path / self.session_dir / "reports"
+        else:
+            reports_path = self.output_path / "reports"
+        
+        reports_path.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        summary = self.generate_summary_report(analysis_result)
+        
+        # 写入文件
+        report_file = reports_path / f"summary_report_{timestamp}.txt"
+        
+        with open(report_file, 'w', encoding='utf-8') as f:
+            f.write(summary)
+        
+        return str(report_file)
+
     def generate_json_report(self, analysis_result: AnalysisResult) -> str:
         """
         生成JSON格式的报告
@@ -267,24 +283,24 @@ class ReportGenerator:
             analysis_result: 分析结果
             
         Returns:
-            str: JSON报告文件路径
+            str: 报告文件路径
         """
-        # 转换为可序列化的字典
+        # 确定报告输出路径
+        if self.session_dir:
+            reports_path = self.output_path / self.session_dir / "reports"
+        else:
+            reports_path = self.output_path / "reports"
+        
+        reports_path.mkdir(parents=True, exist_ok=True)
+        
+        # 构建报告数据
         report_data = {
             'timestamp': datetime.now().isoformat(),
-            'config': {
-                'project_path': self.config.project_path,
-                'i18n_path': self.config.i18n_path,
-                'output_path': self.config.output_path
-            },
-            'statistics': {
+            'summary': {
                 'total_used_keys': analysis_result.total_used_keys,
                 'total_defined_keys': analysis_result.total_defined_keys,
                 'matched_keys': analysis_result.matched_keys,
-                'coverage_percentage': round(analysis_result.coverage_percentage, 2),
-                'missing_keys_count': len(analysis_result.missing_keys),
-                'unused_keys_count': len(analysis_result.unused_keys),
-                'inconsistent_keys_count': len(analysis_result.inconsistent_keys)
+                'coverage_percentage': analysis_result.coverage_percentage
             },
             'missing_keys': [asdict(mk) for mk in analysis_result.missing_keys],
             'missing_keys_by_file': {
@@ -306,7 +322,7 @@ class ReportGenerator:
         }
         
         # 写入JSON文件
-        json_file = self.output_path / f"analysis_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        json_file = reports_path / "analysis_report.json"
         
         with open(json_file, 'w', encoding='utf-8') as f:
             json.dump(report_data, f, ensure_ascii=False, indent=2)

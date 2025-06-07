@@ -23,6 +23,7 @@ from ...core.scanner import FileScanner
 from ...core.parser import I18nFileParser
 from ...core.analyzer import AnalysisEngine
 from ...core.reporter import ReportGenerator
+from ...core.optimizer import I18nOptimizer
 
 
 class AnalysisWorker(QThread):
@@ -82,9 +83,26 @@ class AnalysisWorker(QThread):
             analysis_result = analyzer.analyze(scan_result, parse_result)
             self.log_message.emit("INFO", f"分析完成: 覆盖率 {analysis_result.coverage_percentage:.1f}%")
             
-            # 阶段4: 生成报告
+            # 阶段4: 优化国际化文件
+            self.stage_changed.emit("优化", "正在优化国际化文件...")
+            optimizer = I18nOptimizer(self.config)
+            
+            if self.should_stop:
+                return
+                
+            # 执行优化
+            optimization_result = optimizer.optimize(analysis_result, parse_result)
+            self.log_message.emit("INFO", f"优化完成: 移除 {optimization_result.removed_keys_count} 个未使用键，添加 {optimization_result.added_keys_count} 个缺失键")
+            
+            # 打印调试信息
+            optimizer.print_optimization_debug_info(optimization_result, analysis_result)
+            
+            # 阶段5: 生成报告
             self.stage_changed.emit("报告", "正在生成报告...")
             reporter = ReportGenerator(self.config)
+            
+            # 设置与优化器相同的会话目录
+            reporter.set_session_directory(optimization_result.session_dir)
             
             if self.should_stop:
                 return
@@ -92,7 +110,8 @@ class AnalysisWorker(QThread):
             # 生成各种报告
             text_report = reporter.generate_full_report(analysis_result, parse_result)
             json_report = reporter.generate_json_report(analysis_result)
-            optimized_files = reporter.generate_optimized_i18n_files(analysis_result, parse_result)
+            # 使用reporter的方法作为备用的优化文件生成（仅移除未使用键）
+            backup_optimized_files = reporter.generate_optimized_i18n_files(analysis_result, parse_result)
             
             self.log_message.emit("INFO", "报告生成完成")
             
@@ -102,10 +121,12 @@ class AnalysisWorker(QThread):
                 'analysis_result': analysis_result,
                 'parse_result': parse_result,
                 'scan_result': scan_result,
+                'optimization_result': optimization_result,  # 添加优化结果
+                'config': self.config,  # 添加配置信息
                 'reports': {
                     'text': text_report,
                     'json': json_report,
-                    'optimized': optimized_files
+                    'optimized': backup_optimized_files  # 备用的优化文件
                 }
             })
             
