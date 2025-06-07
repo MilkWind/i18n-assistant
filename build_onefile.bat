@@ -5,6 +5,9 @@ pyinstaller ^
   --hidden-import "yaml" ^
   --hidden-import "yaml.loader" ^
   --hidden-import "yaml.dumper" ^
+  --hidden-import "yaml.constructor" ^
+  --hidden-import "yaml.representer" ^
+  --collect-all "yaml" ^
   --exclude-module "tkinter" ^
   --exclude-module "matplotlib" ^
   --exclude-module "numpy" ^
