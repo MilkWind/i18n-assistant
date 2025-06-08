@@ -1,6 +1,7 @@
 @echo off
 pyinstaller ^
   --onefile ^
+  --windowed ^
   --name "i18n-assistant" ^
   --hidden-import "yaml" ^
   --hidden-import "yaml.loader" ^
