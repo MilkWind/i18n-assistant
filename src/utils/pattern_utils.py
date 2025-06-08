@@ -27,7 +27,6 @@ def find_i18n_keys_in_text(text: str, patterns: List[str] = None) -> List[Dict[s
         List[Dict[str, Any]]: 匹配结果列表，每个元素包含键、行号、列号等信息
     """
     results = []
-    lines = text.split('\n')
 
     # 使用改进的模式系统
     if patterns:
@@ -35,38 +34,68 @@ def find_i18n_keys_in_text(text: str, patterns: List[str] = None) -> List[Dict[s
         compiled_patterns = []
         for pattern_str in patterns:
             try:
-                compiled_patterns.append(re.compile(pattern_str))
+                compiled_patterns.append(re.compile(pattern_str, re.DOTALL | re.MULTILINE))
             except re.error as e:
                 logger.warning(f"无效的正则表达式模式 '{pattern_str}': {e}")
     else:
         # 使用内置的改进模式
         compiled_patterns = _create_improved_patterns()
     
-    for line_no, line in enumerate(lines, 1):
-        matches = _find_matches_in_line(line, compiled_patterns)
-
-        for match_info in matches:
-            key = match_info['key']
-            start = match_info['start']
-            end = match_info['end']
-            
-            # 跳过包含变量插值的键
-            if _contains_variable_interpolation(key):
-                continue
+    # 对整个文本进行匹配，支持跨行
+    for pattern in compiled_patterns:
+        for match in pattern.finditer(text):
+            if match.groups() and len(match.groups()) >= 2:
+                key = match.group(2)  # 第二个捕获组是键（第一个是引号）
+                start = match.start()
+                end = match.end()
                 
-            # 计算列号
-            col_no = start + 1
+                # 跳过包含变量插值的键
+                if _contains_variable_interpolation(key):
+                    continue
+                
+                # 计算行号和列号
+                line_no, col_no = _get_line_column_from_position(text, start)
+                
+                results.append({
+                    'key': key,
+                    'line': line_no,
+                    'column': col_no,
+                    'start': start,
+                    'end': end,
+                    'match_text': text[start:end]
+                })
+    
+    # 去重，以防多个模式匹配到同一个位置
+    unique_results = []
+    seen_positions = set()
+    
+    for result in results:
+        pos_key = (result['start'], result['end'], result['key'])
+        if pos_key not in seen_positions:
+            seen_positions.add(pos_key)
+            unique_results.append(result)
+    
+    # 按行号和列号排序
+    unique_results.sort(key=lambda x: (x['line'], x['column']))
+    
+    return unique_results
 
-            results.append({
-                'key': key,
-                'line': line_no,
-                'column': col_no,
-                'start': start,
-                'end': end,
-                'match_text': line[start:end]
-            })
 
-    return results
+def _get_line_column_from_position(text: str, position: int) -> Tuple[int, int]:
+    """
+    根据字符位置计算行号和列号
+    
+    Args:
+        text: 完整文本
+        position: 字符位置
+        
+    Returns:
+        Tuple[int, int]: (行号, 列号) - 1-based
+    """
+    lines_before = text[:position].split('\n')
+    line_no = len(lines_before)
+    col_no = len(lines_before[-1]) + 1
+    return line_no, col_no
 
 
 
@@ -79,69 +108,35 @@ def _create_improved_patterns() -> List[Pattern]:
     Returns:
         List[Pattern]: 编译后的正则表达式模式列表
     """
-    # 改进的模式，考虑各种引号和参数情况
+    # 改进的模式，考虑各种引号和参数情况，支持跨行匹配
     pattern_strings = [
-        # $t() with single/double quotes
-        r'\$t\s*\(\s*([\'"])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',
+        # $t() with single/double quotes - 改进版本，支持复杂的参数结构
+        r'\$t\s*\(\s*([\'"])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
         # $t() with backticks - will be filtered out later if contains ${} 
-        r'\$t\s*\(\s*(`)((?:(?!`)[^\\]|\\.)*?)`(?:\s*,.*?)?\s*\)',
+        r'\$t\s*\(\s*(`)((?:(?!`)[^\\]|\\.)*?)`\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
+        # 更强大的 $t() 模式，支持嵌套的对象参数和跨行
+        r'\$t\s*\(\s*([\'"])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,\s*\{(?:[^{}]*|\{[^{}]*\})*\})?\s*\)',
         # t() - 但前面不能是字母、$符号或点号
-        r'(?<![a-zA-Z$\.])t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',
+        r'(?<![a-zA-Z$\.])t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
         # i18n.t() - 支持单引号和双引号
-        r'i18n\.t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',
+        r'i18n\.t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
         # _() - 但前面不能是字母
-        r'(?<![a-zA-Z])_\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',
+        r'(?<![a-zA-Z])_\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
         # gettext()
-        r'gettext\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',
+        r'gettext\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
     ]
     
     compiled_patterns = []
     for pattern in pattern_strings:
         try:
-            compiled_patterns.append(re.compile(pattern))
+            compiled_patterns.append(re.compile(pattern, re.DOTALL | re.MULTILINE))
         except re.error as e:
             logger.warning(f"无效的正则表达式模式 '{pattern}': {e}")
     
     return compiled_patterns
 
 
-def _find_matches_in_line(line: str, patterns: List[Pattern]) -> List[Dict[str, Any]]:
-    """
-    在单行文本中查找匹配项
-    
-    Args:
-        line: 要搜索的行
-        patterns: 编译后的正则表达式模式列表
-        
-    Returns:
-        List[Dict[str, Any]]: 匹配结果列表
-    """
-    matches = []
-    
-    for pattern in patterns:
-        for match in pattern.finditer(line):
-            if match.groups() and len(match.groups()) >= 2:
-                key = match.group(2)  # 第二个捕获组是键（第一个是引号）
-                start = match.start()
-                end = match.end()
-                
-                matches.append({
-                    'key': key,
-                    'start': start,
-                    'end': end
-                })
-    
-    # 去重，以防多个模式匹配到同一个位置
-    unique_matches = []
-    seen_positions = set()
-    
-    for match in matches:
-        pos_key = (match['start'], match['end'], match['key'])  # 加上key来更好地去重
-        if pos_key not in seen_positions:
-            seen_positions.add(pos_key)
-            unique_matches.append(match)
-    
-    return unique_matches
+
 
 
 def _contains_variable_interpolation(key: str) -> bool:
