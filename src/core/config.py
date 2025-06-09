@@ -10,6 +10,8 @@ import os
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
 
+from ..utils.pattern_utils import get_default_i18n_patterns
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,16 +44,7 @@ class Config:
             '.idea/**', '.venv/**'])
 
     # 国际化调用模式配置
-    i18n_patterns: List[str] = field(
-        default_factory=lambda: [
-            # 改进的模式，支持额外参数并避免变量插值
-            r'\$t\s*\(\s*([\'"])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',  # $t() with quotes and params
-            r'\$t\s*\(\s*(`)((?:(?!`)[^\\]|\\.)*?)`(?:\s*,.*?)?\s*\)',       # $t() with backticks (filtered for ${})
-            r'(?<![a-zA-Z$\.])t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',  # t() standalone
-            r'i18n\.t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',  # i18n.t()
-            r'(?<![a-zA-Z])_\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',  # _() 
-            r'gettext\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1(?:\s*,.*?)?\s*\)',  # gettext()
-        ])
+    i18n_patterns: List[str] = field(default_factory=get_default_i18n_patterns)
 
     # 文件扩展名配置
     file_extensions: List[str] = field(

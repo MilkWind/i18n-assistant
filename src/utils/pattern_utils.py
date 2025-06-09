@@ -101,21 +101,22 @@ def _get_line_column_from_position(text: str, position: int) -> Tuple[int, int]:
 
 
 
-def _create_improved_patterns() -> List[Pattern]:
+def get_default_i18n_patterns() -> List[str]:
     """
-    创建改进的正则表达式模式，更准确地匹配国际化调用
+    获取默认的国际化调用模式字符串列表
     
     Returns:
-        List[Pattern]: 编译后的正则表达式模式列表
+        List[str]: 正则表达式模式字符串列表
     """
-    # 改进的模式，考虑各种引号和参数情况，支持跨行匹配
-    pattern_strings = [
+    return [
         # $t() with single/double quotes - 改进版本，支持复杂的参数结构
         r'\$t\s*\(\s*([\'"])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
         # $t() with backticks - will be filtered out later if contains ${} 
         r'\$t\s*\(\s*(`)((?:(?!`)[^\\]|\\.)*?)`\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
         # 更强大的 $t() 模式，支持嵌套的对象参数和跨行
         r'\$t\s*\(\s*([\'"])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,\s*\{(?:[^{}]*|\{[^{}]*\})*\})?\s*\)',
+        # req.t() - 支持Express.js中的请求对象国际化调用
+        r'req\.t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,\s*\{(?:[^{}]*|\{[^{}]*\})*\})?\s*\)',
         # t() - 但前面不能是字母、$符号或点号
         r'(?<![a-zA-Z$\.])t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
         # i18n.t() - 支持单引号和双引号
@@ -125,6 +126,17 @@ def _create_improved_patterns() -> List[Pattern]:
         # gettext()
         r'gettext\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
     ]
+
+
+def _create_improved_patterns() -> List[Pattern]:
+    """
+    创建改进的正则表达式模式，更准确地匹配国际化调用
+    
+    Returns:
+        List[Pattern]: 编译后的正则表达式模式列表
+    """
+    # 使用共享的模式字符串
+    pattern_strings = get_default_i18n_patterns()
     
     compiled_patterns = []
     for pattern in pattern_strings:
@@ -276,6 +288,7 @@ def create_key_pattern(key: str) -> str:
     escaped_key = escape_regex_chars(key)
     patterns = [rf'(?<![a-zA-Z])t\([\'"`]{escaped_key}[\'"`]\)',  # t() but not preceded by any letter
         rf'\$t\([\'"`]{escaped_key}[\'"`]\)',  # $t()
+        rf'req\.t\([\'"`]{escaped_key}[\'"`]\)',  # req.t()
         rf'i18n\.t\([\'"`]{escaped_key}[\'"`]\)',  # i18n.t()
         rf'(?<![a-zA-Z])_\([\'"`]{escaped_key}[\'"`]\)',  # _() but not preceded by any letter
         rf'gettext\([\'"`]{escaped_key}[\'"`]\)'  # gettext()

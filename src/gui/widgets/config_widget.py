@@ -4,7 +4,7 @@
 
 from typing import Optional
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, Qt
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QLineEdit, QPushButton, QGroupBox,
                              QCheckBox, QFileDialog, QTextEdit, QComboBox, QSpinBox, QMessageBox)
 
@@ -170,12 +170,27 @@ class ConfigWidget(QWidget):
         self.auto_optimize_checkbox.setChecked(True)  # 默认启用
         layout.addWidget(self.auto_optimize_checkbox, 1, 1)
 
-        # 自定义i18n模式
-        layout.addWidget(QLabel("自定义i18n模式 (每行一个):"), 2, 0, 1, 2)
+        # 自定义i18n模式 - 使用紧凑布局
+        i18n_label = QLabel("自定义i18n模式 (每行一个):")
+        layout.addWidget(i18n_label, 2, 0, 1, 2)
+        
+        # 设置自定义i18n文本框，启用垂直滚动
         self.i18n_patterns_edit = QTextEdit()
-        self.i18n_patterns_edit.setMaximumHeight(80)
+        self.i18n_patterns_edit.setMinimumHeight(80)
+        self.i18n_patterns_edit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.i18n_patterns_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.i18n_patterns_edit.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)  # 按控件宽度换行
         self.i18n_patterns_edit.setPlaceholderText("t\\(['\"`](.*?)['\"`]\\)\n\\$t\\(['\"`](.*?)['\"`]\\)")
         layout.addWidget(self.i18n_patterns_edit, 3, 0, 1, 2)
+        
+        # 设置紧凑的行间距和拉伸策略
+        layout.setVerticalSpacing(5)  # 设置垂直间距为5像素
+        layout.setRowStretch(0, 0)  # 最大线程数行不拉伸
+        layout.setRowStretch(1, 0)  # 自动优化行不拉伸
+        layout.setRowStretch(2, 0)  # 标签行不拉伸
+        layout.setRowStretch(3, 0)  # 文本框行不拉伸
+        # 如果有更多行，让最后一行承担额外空间
+        layout.setRowStretch(4, 1)  # 添加一个拉伸行来吸收额外空间
 
         return group
 
