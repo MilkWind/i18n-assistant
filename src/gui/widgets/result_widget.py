@@ -63,14 +63,15 @@ class StatsWidget(QWidget):
         self.stats_cards = {}
         stats_items = [("total_keys", "总键数", "#2196F3"), ("missing_keys", "缺失键", "#F44336"),
                        ("unused_keys", "未使用键", "#FF9800"), ("inconsistent_keys", "不一致键", "#9C27B0"),
-                       ("removed_keys", "已移除键", "#4CAF50"), ("added_keys", "已添加键", "#2196F3")]
+                       ("variable_interpolation", "变量插值", "#607D8B"), ("removed_keys", "已移除键", "#4CAF50"),
+                       ("added_keys", "已添加键", "#2196F3")]
 
-        # 按3x2网格布局添加卡片
+        # 按4x2网格布局添加卡片（现在有7个卡片，需要4行）
         for i, (key, label, color) in enumerate(stats_items):
             card = self.create_stat_card(label, "0", color)
             self.stats_cards[key] = card
-            row = i // 2  # 行号：0, 0, 1, 1, 2, 2
-            col = i % 2  # 列号：0, 1, 0, 1, 0, 1
+            row = i // 2  # 行号：0, 0, 1, 1, 2, 2, 3
+            col = i % 2  # 列号：0, 1, 0, 1, 0, 1, 0
             stats_layout.addWidget(card, row, col)
 
         # 设置列拉伸
@@ -187,11 +188,13 @@ class StatsWidget(QWidget):
             missing_keys = getattr(analysis_result, 'missing_keys', [])
             unused_keys = getattr(analysis_result, 'unused_keys', [])
             inconsistent_keys = getattr(analysis_result, 'inconsistent_keys', [])
+            variable_interpolation_calls = getattr(analysis_result, 'variable_interpolation_calls', [])
 
             self.stats_cards["total_keys"].value_label.setText(str(total_defined_keys))
             self.stats_cards["missing_keys"].value_label.setText(str(len(missing_keys)))
             self.stats_cards["unused_keys"].value_label.setText(str(len(unused_keys)))
             self.stats_cards["inconsistent_keys"].value_label.setText(str(len(inconsistent_keys)))
+            self.stats_cards["variable_interpolation"].value_label.setText(str(len(variable_interpolation_calls)))
 
             # 更新优化结果统计
             if optimization_result:
@@ -254,6 +257,10 @@ class ResultWidget(QWidget):
         # 文件覆盖率标签页
         self.coverage_tab = self.create_coverage_tab()
         self.tab_widget.addTab(self.coverage_tab, "文件覆盖率")
+
+        # 变量插值标签页
+        self.variable_interpolation_tab = self.create_variable_interpolation_tab()
+        self.tab_widget.addTab(self.variable_interpolation_tab, "变量插值")
 
         splitter.addWidget(self.tab_widget)
 
@@ -513,6 +520,97 @@ class ResultWidget(QWidget):
 
         return widget
 
+    def create_variable_interpolation_tab(self) -> QWidget:
+        """创建变量插值标签页"""
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+
+        # 说明文字
+        desc_label = QLabel(
+            "以下是代码中使用变量插值的国际化调用。这些调用可能在运行时动态生成具体的键值：")
+        desc_label.setStyleSheet("color: #666; font-size: 12px; margin-bottom: 10px;")
+        layout.addWidget(desc_label)
+
+        # 创建垂直分割器
+        splitter = QSplitter(Qt.Orientation.Vertical)
+
+        # 文件统计概览
+        summary_widget = QWidget()
+        summary_layout = QVBoxLayout(summary_widget)
+        summary_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
+        summary_layout.setSpacing(5)  # 设置固定间距
+
+        summary_title = QLabel("按文件统计:")
+        summary_title.setStyleSheet("font-weight: bold; font-size: 14px;")
+        summary_layout.addWidget(summary_title)
+
+        self.variable_interpolation_summary_table = QTableWidget()
+        self.variable_interpolation_summary_table.setColumnCount(2)
+        self.variable_interpolation_summary_table.setHorizontalHeaderLabels(["文件", "变量插值调用数"])
+        self.variable_interpolation_summary_table.setMinimumHeight(100)  # 设置最小高度
+        self.setup_table_style(self.variable_interpolation_summary_table)
+        summary_layout.addWidget(self.variable_interpolation_summary_table, 1)  # 添加拉伸因子
+
+        splitter.addWidget(summary_widget)
+
+        # 详细调用列表
+        detail_widget = QWidget()
+        detail_layout = QVBoxLayout(detail_widget)
+        detail_layout.setContentsMargins(0, 0, 0, 0)  # 移除边距
+        detail_layout.setSpacing(5)  # 设置固定间距
+
+        detail_title = QLabel("详细列表:")
+        detail_title.setStyleSheet("font-weight: bold; font-size: 14px;")
+        detail_layout.addWidget(detail_title)
+
+        # 表格
+        self.variable_interpolation_table = QTableWidget()
+        self.variable_interpolation_table.setColumnCount(5)
+        self.variable_interpolation_table.setHorizontalHeaderLabels(["键模式", "文件", "行号", "列号", "匹配文本"])
+
+        # 设置表格样式
+        self.setup_table_style(self.variable_interpolation_table)
+
+        # 双击打开文件
+        self.variable_interpolation_table.itemDoubleClicked.connect(self.on_variable_interpolation_item_double_clicked)
+
+        detail_layout.addWidget(self.variable_interpolation_table, 1)  # 添加拉伸因子
+
+        # 注意事项
+        warning_widget = QWidget()
+        warning_layout = QVBoxLayout(warning_widget)
+        warning_layout.setContentsMargins(10, 10, 10, 10)
+        warning_layout.setSpacing(5)
+
+        warning_title = QLabel("⚠️ 注意事项:")
+        warning_title.setStyleSheet("font-weight: bold; font-size: 14px; color: #FF9800;")
+        warning_layout.addWidget(warning_title)
+
+        warning_text = QLabel(
+            "• 这些调用使用了变量插值，可能在运行时动态生成具体的键值\n"
+            "• 在删除未使用的国际化键时，请检查这些模式是否可能匹配到您要删除的键\n"
+            "• 例如：t(`words.${pos}`) 可能会匹配 words.0, words.1, words.home 等键\n"
+            "• 建议在删除键之前，仔细检查优化后的文件是否误删了这些动态引用的键"
+        )
+        warning_text.setStyleSheet("color: #666; font-size: 11px; padding: 5px; "
+                                   "background-color: #FFF3E0; border-radius: 4px;")
+        warning_text.setWordWrap(True)
+        warning_layout.addWidget(warning_text)
+
+        warning_widget.setMaximumHeight(120)  # 限制警告区域高度
+        detail_layout.addWidget(warning_widget)
+
+        splitter.addWidget(detail_widget)
+
+        # 设置分割器属性
+        splitter.setStretchFactor(0, 1)  # 统计概览可适度拉伸
+        splitter.setStretchFactor(1, 3)  # 详细列表（包含警告）可拉伸更多
+        splitter.setSizes([120, 380])  # 设置初始大小比例
+
+        layout.addWidget(splitter)
+
+        return widget
+
     def setup_table_style(self, table: QTableWidget) -> None:
         """设置表格样式"""
         # 表格样式
@@ -564,15 +662,19 @@ class ResultWidget(QWidget):
         self.update_inconsistent_keys_table(analysis_result.inconsistent_keys)
         self.update_coverage_table(analysis_result.file_coverage)
         self.update_i18n_coverage_table(analysis_result.file_coverage)
+        self.update_variable_interpolation_table(getattr(analysis_result, 'variable_interpolation_calls', []))
+        self.update_variable_interpolation_summary_table(getattr(analysis_result, 'variable_interpolation_by_file', {}))
 
         # 启用按钮
         self.set_buttons_enabled(True)
 
         # 更新标签页标题，显示数量
+        variable_interpolation_calls = getattr(analysis_result, 'variable_interpolation_calls', [])
         self.tab_widget.setTabText(0, f"缺失键 ({len(analysis_result.missing_keys)})")
         self.tab_widget.setTabText(1, f"未使用键 ({len(analysis_result.unused_keys)})")
         self.tab_widget.setTabText(2, f"不一致键 ({len(analysis_result.inconsistent_keys)})")
         self.tab_widget.setTabText(3, f"文件覆盖率 ({len(analysis_result.file_coverage)})")
+        self.tab_widget.setTabText(4, f"变量插值 ({len(variable_interpolation_calls)})")
 
     def update_missing_keys_table(self, missing_keys: List) -> None:
         """更新缺失键表格"""
@@ -798,6 +900,51 @@ class ResultWidget(QWidget):
             print(f"Error updating i18n coverage table: {e}")
             QMessageBox.warning(self, "警告", f"更新国际化文件覆盖率表格时发生错误: {str(e)}")
 
+    def update_variable_interpolation_table(self, variable_interpolation_calls: List) -> None:
+        """更新变量插值表格"""
+        try:
+            self.variable_interpolation_table.setRowCount(len(variable_interpolation_calls))
+
+            for i, vi_call in enumerate(variable_interpolation_calls):
+                # 安全获取属性
+                key = getattr(vi_call, 'key', 'N/A')
+                file_path = getattr(vi_call, 'file_path', 'N/A')
+                line_number = getattr(vi_call, 'line_number', 0)
+                column_number = getattr(vi_call, 'column_number', 0)
+                match_text = getattr(vi_call, 'match_text', '')
+
+                self.variable_interpolation_table.setItem(i, 0, QTableWidgetItem(str(key)))
+                self.variable_interpolation_table.setItem(i, 1, QTableWidgetItem(str(file_path)))
+                self.variable_interpolation_table.setItem(i, 2, QTableWidgetItem(str(line_number)))
+                self.variable_interpolation_table.setItem(i, 3, QTableWidgetItem(str(column_number)))
+
+                # 限制匹配文本的显示长度
+                match_text_str = str(match_text) if match_text else ""
+                if len(match_text_str) > 80:
+                    match_text_str = match_text_str[:77] + "..."
+                self.variable_interpolation_table.setItem(i, 4, QTableWidgetItem(match_text_str))
+
+            self.variable_interpolation_table.resizeColumnsToContents()
+
+        except Exception as e:
+            print(f"Error updating variable interpolation table: {e}")
+            QMessageBox.warning(self, "警告", f"更新变量插值表格时发生错误: {str(e)}")
+
+    def update_variable_interpolation_summary_table(self, variable_interpolation_by_file: Dict) -> None:
+        """更新变量插值摘要表格"""
+        try:
+            self.variable_interpolation_summary_table.setRowCount(len(variable_interpolation_by_file))
+
+            for i, (file_path, vi_calls) in enumerate(variable_interpolation_by_file.items()):
+                self.variable_interpolation_summary_table.setItem(i, 0, QTableWidgetItem(str(file_path)))
+                self.variable_interpolation_summary_table.setItem(i, 1, QTableWidgetItem(str(len(vi_calls))))
+
+            self.variable_interpolation_summary_table.resizeColumnsToContents()
+
+        except Exception as e:
+            print(f"Error updating variable interpolation summary table: {e}")
+            QMessageBox.warning(self, "警告", f"更新变量插值摘要表格时发生错误: {str(e)}")
+
     def on_missing_item_double_clicked(self, item: QTableWidgetItem) -> None:
         """处理缺失键项目双击"""
         row = item.row()
@@ -810,6 +957,13 @@ class ResultWidget(QWidget):
         row = item.row()
         file_path = self.coverage_table.item(row, 0).text()
         self.file_open_requested.emit(file_path, 1)
+
+    def on_variable_interpolation_item_double_clicked(self, item: QTableWidgetItem) -> None:
+        """处理变量插值项目双击"""
+        row = item.row()
+        file_path = self.variable_interpolation_table.item(row, 1).text()
+        line_number = int(self.variable_interpolation_table.item(row, 2).text())
+        self.file_open_requested.emit(file_path, line_number)
 
     def export_json_report(self) -> None:
         """导出JSON报告"""
@@ -959,6 +1113,10 @@ class ResultWidget(QWidget):
             self.unused_summary_table.setRowCount(0)
         if hasattr(self, 'i18n_coverage_table'):
             self.i18n_coverage_table.setRowCount(0)
+        if hasattr(self, 'variable_interpolation_table'):
+            self.variable_interpolation_table.setRowCount(0)
+        if hasattr(self, 'variable_interpolation_summary_table'):
+            self.variable_interpolation_summary_table.setRowCount(0)
 
         # 重置统计信息
         self.stats_widget.coverage_value = 0.0
@@ -972,6 +1130,7 @@ class ResultWidget(QWidget):
         self.tab_widget.setTabText(1, "未使用键")
         self.tab_widget.setTabText(2, "不一致键")
         self.tab_widget.setTabText(3, "文件覆盖率")
+        self.tab_widget.setTabText(4, "变量插值")
 
         # 禁用按钮
         self.set_buttons_enabled(False)

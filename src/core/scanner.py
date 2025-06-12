@@ -63,11 +63,13 @@ class ProjectScanResult:
     total_files: int
     total_calls: int
     scan_results: List[ScanResult]
+    variable_interpolation_calls: List = field(default_factory=list)
 
     @classmethod
     def from_summary_and_results(cls, summary: ScanSummary, results: List[ScanResult]) -> 'ProjectScanResult':
         """从ScanSummary和ScanResult列表创建ProjectScanResult"""
         i18n_calls = []
+        variable_interpolation_calls = []
 
         # 转换matches为I18nCall对象
         for result in results:
@@ -77,8 +79,24 @@ class ProjectScanResult:
                                 context=match.get('context'))
                 i18n_calls.append(call)
 
+            # 转换variable_interpolation_matches为VariableInterpolationCall对象
+            if hasattr(result, 'variable_interpolation_matches'):
+                from .analyzer import VariableInterpolationCall
+                for vi_match in result.variable_interpolation_matches:
+                    vi_call = VariableInterpolationCall(
+                        key=vi_match['key'], 
+                        file_path=result.file_path, 
+                        line_number=vi_match.get('line', 0),
+                        column_number=vi_match.get('column', 0), 
+                        match_text=vi_match.get('match_text', ''),
+                        pattern=vi_match.get('pattern'),
+                        context=vi_match.get('context')
+                    )
+                    variable_interpolation_calls.append(vi_call)
+
         return cls(i18n_calls=i18n_calls, unique_keys=summary.unique_keys, total_files=summary.total_files,
-                   total_calls=summary.total_matches, scan_results=results)
+                   total_calls=summary.total_matches, scan_results=results,
+                   variable_interpolation_calls=variable_interpolation_calls)
 
 
 class FileScanner:
