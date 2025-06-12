@@ -4,7 +4,7 @@
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Set, Any
+from typing import Dict, List, Set, Any, Optional
 
 from .parser import ParseResult
 from .scanner import I18nCall
@@ -34,6 +34,18 @@ class InconsistentKey:
     key: str
     existing_files: List[str] = field(default_factory=list)
     missing_files: List[str] = field(default_factory=list)
+
+
+@dataclass
+class VariableInterpolationCall:
+    """包含变量插值的国际化调用"""
+    key: str
+    file_path: str
+    line_number: int
+    column_number: int
+    match_text: str
+    pattern: Optional[str] = None
+    context: Optional[str] = None
 
 
 @dataclass
@@ -78,6 +90,9 @@ class AnalysisResult:
     inconsistent_keys: List[InconsistentKey] = field(default_factory=list)
     file_coverage: Dict[str, FileCoverage] = field(default_factory=dict)
 
+    # 变量插值调用
+    variable_interpolation_calls: List[VariableInterpolationCall] = field(default_factory=list)
+
     # 统计信息
     total_used_keys: int = 0
     total_defined_keys: int = 0
@@ -92,19 +107,22 @@ class AnalysisResult:
     unused_keys_by_file: Dict[str, List[UnusedKey]] = field(default_factory=dict)
     # 按文件统计缺失键
     missing_keys_by_file: Dict[str, List[MissingKey]] = field(default_factory=dict)
+    # 按文件统计变量插值调用
+    variable_interpolation_by_file: Dict[str, List[VariableInterpolationCall]] = field(default_factory=dict)
 
     @property
     def coverage_stats(self) -> CoverageStats:
         """获取覆盖率统计"""
         return CoverageStats(total_used_keys=self.total_used_keys, total_defined_keys=self.total_defined_keys,
-            missing_keys_count=len(self.missing_keys), unused_keys_count=len(self.unused_keys),
-            coverage_percentage=self.coverage_percentage)
+                             missing_keys_count=len(self.missing_keys), unused_keys_count=len(self.unused_keys),
+                             coverage_percentage=self.coverage_percentage)
 
     def get_summary(self) -> Dict[str, Any]:
         """获取分析摘要"""
         return {'missing_keys_count': len(self.missing_keys), 'unused_keys_count': len(self.unused_keys),
-            'inconsistent_keys_count': len(self.inconsistent_keys),
-            'total_issues': len(self.missing_keys) + len(self.unused_keys) + len(self.inconsistent_keys)}
+                'inconsistent_keys_count': len(self.inconsistent_keys),
+                'variable_interpolation_count': len(self.variable_interpolation_calls),
+                'total_issues': len(self.missing_keys) + len(self.unused_keys) + len(self.inconsistent_keys)}
 
     def get_unused_keys_summary_by_file(self) -> Dict[str, int]:
         """获取按文件统计的未使用键摘要"""
@@ -113,6 +131,10 @@ class AnalysisResult:
     def get_missing_keys_summary_by_file(self) -> Dict[str, int]:
         """获取按文件统计的缺失键摘要"""
         return {file_path: len(missing_list) for file_path, missing_list in self.missing_keys_by_file.items()}
+
+    def get_variable_interpolation_summary_by_file(self) -> Dict[str, int]:
+        """获取按文件统计的变量插值调用摘要"""
+        return {file_path: len(vi_list) for file_path, vi_list in self.variable_interpolation_by_file.items()}
 
 
 class AnalysisEngine:
@@ -140,25 +162,43 @@ class AnalysisEngine:
                 # Empty scan results
                 used_keys = set()
                 i18n_calls = []
+                variable_interpolation_calls = []
             else:
                 # Convert list of ScanResult to combined data
                 unique_keys = set()
                 i18n_calls = []
+                variable_interpolation_calls = []
                 for sr in scan_result:
                     for match in sr.matches:
                         unique_keys.add(match['key'])
                         call = I18nCall(key=match['key'], file_path=sr.file_path, line_number=match.get('line', 0),
-                            column_number=match.get('column', 0), pattern=match.get('pattern'),
-                            context=match.get('context'))
+                                        column_number=match.get('column', 0), pattern=match.get('pattern'),
+                                        context=match.get('context'))
                         i18n_calls.append(call)
 
+                    # 处理变量插值匹配
+                    if hasattr(sr, 'variable_interpolation_matches'):
+                        for vi_match in sr.variable_interpolation_matches:
+                            vi_call = VariableInterpolationCall(key=vi_match['key'], file_path=sr.file_path,
+                                line_number=vi_match.get('line', 0), column_number=vi_match.get('column', 0),
+                                match_text=vi_match.get('match_text', ''), pattern=vi_match.get('pattern'),
+                                context=vi_match.get('context'))
+                            variable_interpolation_calls.append(vi_call)
+
                 # Create a ProjectScanResult-like object
-                scan_result = type('MockScanResult', (), {'unique_keys': unique_keys, 'i18n_calls': i18n_calls})()
+                scan_result = type('MockScanResult', (), {'unique_keys': unique_keys, 'i18n_calls': i18n_calls,
+                    'variable_interpolation_calls': variable_interpolation_calls})()
                 used_keys = unique_keys
         else:
             # Regular ScanResult or ProjectScanResult
             used_keys = scan_result.unique_keys
             i18n_calls = scan_result.i18n_calls
+
+            # 处理变量插值调用
+            if hasattr(scan_result, 'variable_interpolation_calls'):
+                variable_interpolation_calls = scan_result.variable_interpolation_calls
+            else:
+                variable_interpolation_calls = []
 
         # Handle parse_result
         if isinstance(parse_result, list):
@@ -208,7 +248,11 @@ class AnalysisEngine:
         # 4. 分析文件覆盖情况
         result.file_coverage = self._analyze_file_coverage(scan_result, defined_keys, parse_result)
 
-        # 5. 计算统计信息
+        # 5. 处理变量插值调用
+        result.variable_interpolation_calls = variable_interpolation_calls
+        result.variable_interpolation_by_file = self._group_variable_interpolation_by_file(variable_interpolation_calls)
+
+        # 6. 计算统计信息
         result = self._calculate_statistics(result, used_keys, defined_keys, used_keys_detail)
 
         return result
@@ -257,16 +301,18 @@ class AnalysisEngine:
     def get_analysis_summary(self, result: AnalysisResult) -> Dict[str, Any]:
         """获取分析摘要"""
         return {'overview': {'total_used_keys': result.total_used_keys, 'total_defined_keys': result.total_defined_keys,
-            'matched_keys': result.matched_keys, 'missing_keys_count': len(result.missing_keys),
-            'unused_keys_count': len(result.unused_keys), 'inconsistent_keys_count': len(result.inconsistent_keys),
-            'coverage_percentage': round(result.coverage_percentage, 2)}, 'file_coverage': {
+                             'matched_keys': result.matched_keys, 'missing_keys_count': len(result.missing_keys),
+                             'unused_keys_count': len(result.unused_keys),
+                             'inconsistent_keys_count': len(result.inconsistent_keys),
+                             'coverage_percentage': round(result.coverage_percentage, 2)}, 'file_coverage': {
             file_path: {'coverage_percentage': round(coverage.coverage_percentage, 2),
-                'covered_calls': coverage.covered_calls, 'total_calls': coverage.total_calls} for file_path, coverage in
-            result.file_coverage.items()}, 'top_missing_keys': [mk.key for mk in result.missing_keys[:10]],
-            'top_unused_keys': [uk.key for uk in result.unused_keys[:10]]}
+                        'covered_calls': coverage.covered_calls, 'total_calls': coverage.total_calls} for
+            file_path, coverage in result.file_coverage.items()},
+                'top_missing_keys': [mk.key for mk in result.missing_keys[:10]],
+                'top_unused_keys': [uk.key for uk in result.unused_keys[:10]]}
 
     def _analyze_missing_keys(self, used_keys: Set[str], defined_keys: Set[str],
-            used_keys_detail: Dict[str, List[I18nCall]], parse_result) -> List[MissingKey]:
+                              used_keys_detail: Dict[str, List[I18nCall]], parse_result) -> List[MissingKey]:
         """分析缺失的键"""
         missing_keys = []
         missing_key_names = used_keys - defined_keys
@@ -281,7 +327,7 @@ class AnalysisEngine:
                 suggested_files = self._suggest_i18n_files(key, parse_result)
 
                 missing_key = MissingKey(key=key, file_path=call.file_path, line_number=call.line_number,
-                    column_number=call.column_number, suggested_files=suggested_files)
+                                         column_number=call.column_number, suggested_files=suggested_files)
                 missing_keys.append(missing_key)
 
                 # 按文件分组统计
@@ -408,19 +454,20 @@ class AnalysisEngine:
                     i18n_coverage_percentage = (i18n_covered_calls / total_calls * 100) if total_calls > 0 else 0
 
                     i18n_coverage = I18nFileCoverage(i18n_file=i18n_file, covered_calls=i18n_covered_calls,
-                        uncovered_calls=i18n_uncovered_calls, coverage_percentage=i18n_coverage_percentage,
-                        covered_keys=list(covered_keys), missing_keys=list(missing_keys))
+                                                     uncovered_calls=i18n_uncovered_calls,
+                                                     coverage_percentage=i18n_coverage_percentage,
+                                                     covered_keys=list(covered_keys), missing_keys=list(missing_keys))
                     i18n_coverages[i18n_file] = i18n_coverage
 
             coverage = FileCoverage(file_path=file_path, total_calls=total_calls, covered_calls=covered_calls,
-                uncovered_calls=uncovered_calls, coverage_percentage=coverage_percentage,
-                missing_keys_count=missing_keys_count, i18n_coverages=i18n_coverages)
+                                    uncovered_calls=uncovered_calls, coverage_percentage=coverage_percentage,
+                                    missing_keys_count=missing_keys_count, i18n_coverages=i18n_coverages)
             file_coverage[file_path] = coverage
 
         return file_coverage
 
     def _calculate_statistics(self, result: AnalysisResult, used_keys: Set[str], defined_keys: Set[str],
-            used_keys_detail: Dict[str, List[I18nCall]]) -> AnalysisResult:
+                              used_keys_detail: Dict[str, List[I18nCall]]) -> AnalysisResult:
         """计算统计信息"""
         result.total_used_keys = len(used_keys)
         result.total_defined_keys = len(defined_keys)
@@ -441,29 +488,27 @@ class AnalysisEngine:
         return result
 
     def _suggest_i18n_files(self, key: str, parse_result) -> List[str]:
-        """根据键的特征建议可能的i18n文件"""
+        """建议可能的i18n文件"""
         suggestions = []
 
-        # Handle different types of parse_result
+        # 如果有parse_result，根据现有文件建议
         if hasattr(parse_result, 'keys_by_file'):
-            keys_by_file = parse_result.keys_by_file
-        else:
-            keys_by_file = {}
+            # 建议所有i18n文件
+            suggestions = list(parse_result.keys_by_file.keys())
+        elif hasattr(parse_result, 'files'):
+            suggestions = parse_result.files
+        elif isinstance(parse_result, list):
+            # 如果是列表，提取所有文件路径
+            for pr in parse_result:
+                if hasattr(pr, 'file_path'):
+                    suggestions.append(pr.file_path)
 
-        # 基于键的前缀模式匹配
-        key_parts = key.split('.')
-        if len(key_parts) > 1:
-            prefix = key_parts[0]
-            # 寻找包含相似前缀键的文件
-            for file_path, keys_set in keys_by_file.items():
-                for existing_key in keys_set:
-                    if existing_key.startswith(prefix + '.'):
-                        if file_path not in suggestions:
-                            suggestions.append(file_path)
-                        break
+        return suggestions[:3]  # 限制建议数量
 
-        # 如果没有找到基于前缀的建议，返回所有i18n文件
-        if not suggestions:
-            suggestions = list(keys_by_file.keys())
-
-        return suggestions
+    def _group_variable_interpolation_by_file(self, variable_interpolation_calls: List[VariableInterpolationCall]) -> \
+    Dict[str, List[VariableInterpolationCall]]:
+        """按文件分组变量插值调用"""
+        group_by_file = defaultdict(list)
+        for call in variable_interpolation_calls:
+            group_by_file[call.file_path].append(call)
+        return dict(group_by_file)

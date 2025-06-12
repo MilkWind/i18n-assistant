@@ -9,7 +9,7 @@ import logging
 import os
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Callable, Set
 
 from .config import get_config
@@ -39,6 +39,7 @@ class ScanResult:
     matches: List[Dict[str, Any]]
     encoding: str
     file_size: int
+    variable_interpolation_matches: List[Dict[str, Any]] = field(default_factory=list)
     error: Optional[str] = None
 
 
@@ -72,11 +73,12 @@ class ProjectScanResult:
         for result in results:
             for match in result.matches:
                 call = I18nCall(key=match['key'], file_path=result.file_path, line_number=match.get('line', 0),
-                    column_number=match.get('column', 0), pattern=match.get('pattern'), context=match.get('context'))
+                                column_number=match.get('column', 0), pattern=match.get('pattern'),
+                                context=match.get('context'))
                 i18n_calls.append(call)
 
         return cls(i18n_calls=i18n_calls, unique_keys=summary.unique_keys, total_files=summary.total_files,
-            total_calls=summary.total_matches, scan_results=results)
+                   total_calls=summary.total_matches, scan_results=results)
 
 
 class FileScanner:
@@ -146,8 +148,8 @@ class FileScanner:
         scan_time = time.time() - start_time
 
         summary = ScanSummary(total_files=len(files_to_scan), scanned_files=scanned_count,
-            skipped_files=len(files_to_scan) - scanned_count - error_count, error_files=error_count,
-            total_matches=total_matches, unique_keys=unique_keys, scan_time=scan_time)
+                              skipped_files=len(files_to_scan) - scanned_count - error_count, error_files=error_count,
+                              total_matches=total_matches, unique_keys=unique_keys, scan_time=scan_time)
 
         logger.info(f"扫描完成: {summary.scanned_files}/{summary.total_files} 文件，"
                     f"找到 {summary.total_matches} 个匹配项，"
@@ -194,7 +196,7 @@ class FileScanner:
 
         try:
             for file_path in walk_directory(self.config.project_path, file_extensions=self.config.file_extensions,
-                    ignore_patterns=self.config.ignore_patterns):
+                                            ignore_patterns=self.config.ignore_patterns):
                 if self._stop_event.is_set():
                     break
 
@@ -286,33 +288,40 @@ class FileScanner:
 
             if content is None:
                 return ScanResult(file_path=file_path,
-                    relative_path=get_relative_path(file_path, self.config.project_path), matches=[], encoding="",
-                    file_size=0, error="文件读取失败")
+                                  relative_path=get_relative_path(file_path, self.config.project_path), matches=[],
+                                  variable_interpolation_matches=[], encoding="", file_size=0, error="文件读取失败")
 
             # 查找国际化调用
-            matches = find_i18n_keys_in_text(content, self.config.i18n_patterns)
+            matches, variable_interpolation_matches = find_i18n_keys_in_text(content, self.config.i18n_patterns)
 
             # 添加文件路径信息到每个匹配项
             for match in matches:
                 match['file_path'] = file_path
                 match['relative_path'] = get_relative_path(file_path, self.config.project_path)
 
+            # 添加文件路径信息到每个变量插值匹配项
+            for vi_match in variable_interpolation_matches:
+                vi_match['file_path'] = file_path
+                vi_match['relative_path'] = get_relative_path(file_path, self.config.project_path)
+
             # 获取文件大小
             file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
 
             result = ScanResult(file_path=file_path,
-                relative_path=get_relative_path(file_path, self.config.project_path), matches=matches,
-                encoding=encoding, file_size=file_size)
+                                relative_path=get_relative_path(file_path, self.config.project_path), matches=matches,
+                                variable_interpolation_matches=variable_interpolation_matches, encoding=encoding,
+                                file_size=file_size)
 
-            if matches:
-                logger.debug(f"在文件 {result.relative_path} 中找到 {len(matches)} 个匹配项")
+            if matches or variable_interpolation_matches:
+                logger.debug(
+                    f"在文件 {result.relative_path} 中找到 {len(matches)} 个普通匹配项和 {len(variable_interpolation_matches)} 个变量插值匹配项")
 
             return result
 
         except Exception as e:
             logger.error(f"扫描文件失败 {file_path}: {e}")
             return ScanResult(file_path=file_path, relative_path=get_relative_path(file_path, self.config.project_path),
-                matches=[], encoding="", file_size=0, error=str(e))
+                              matches=[], variable_interpolation_matches=[], encoding="", file_size=0, error=str(e))
 
 
 def scan_project(config=None, progress_callback=None) -> tuple[List[ScanResult], ScanSummary]:

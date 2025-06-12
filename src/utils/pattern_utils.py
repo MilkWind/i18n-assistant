@@ -12,10 +12,7 @@ from typing import List, Pattern, Tuple, Optional, Dict, Any
 logger = logging.getLogger(__name__)
 
 
-
-
-
-def find_i18n_keys_in_text(text: str, patterns: List[str] = None) -> List[Dict[str, Any]]:
+def find_i18n_keys_in_text(text: str, patterns: List[str] = None) -> tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     在文本中查找国际化键
     
@@ -24,9 +21,11 @@ def find_i18n_keys_in_text(text: str, patterns: List[str] = None) -> List[Dict[s
         patterns: 正则表达式模式列表，如果为None或空则使用内置的改进模式
         
     Returns:
-        List[Dict[str, Any]]: 匹配结果列表，每个元素包含键、行号、列号等信息
+        tuple[List[Dict[str, Any]], List[Dict[str, Any]]]: (普通匹配结果, 变量插值引用)
+        每个元素包含键、行号、列号等信息
     """
     results = []
+    variable_interpolation_results = []
 
     # 使用改进的模式系统
     if patterns:
@@ -40,7 +39,7 @@ def find_i18n_keys_in_text(text: str, patterns: List[str] = None) -> List[Dict[s
     else:
         # 使用内置的改进模式
         compiled_patterns = _create_improved_patterns()
-    
+
     # 对整个文本进行匹配，支持跨行
     for pattern in compiled_patterns:
         for match in pattern.finditer(text):
@@ -48,37 +47,37 @@ def find_i18n_keys_in_text(text: str, patterns: List[str] = None) -> List[Dict[s
                 key = match.group(2)  # 第二个捕获组是键（第一个是引号）
                 start = match.start()
                 end = match.end()
-                
-                # 跳过包含变量插值的键
-                if _contains_variable_interpolation(key):
-                    continue
-                
+
                 # 计算行号和列号
                 line_no, col_no = _get_line_column_from_position(text, start)
-                
-                results.append({
-                    'key': key,
-                    'line': line_no,
-                    'column': col_no,
-                    'start': start,
-                    'end': end,
-                    'match_text': text[start:end]
-                })
-    
+
+                match_info = {'key': key, 'line': line_no, 'column': col_no, 'start': start, 'end': end,
+                    'match_text': text[start:end]}
+
+                # 检查是否包含变量插值
+                if _contains_variable_interpolation(key):
+                    # 添加到变量插值结果中
+                    variable_interpolation_results.append(match_info)
+                else:
+                    # 添加到普通结果中
+                    results.append(match_info)
+
     # 去重，以防多个模式匹配到同一个位置
-    unique_results = []
-    seen_positions = set()
-    
-    for result in results:
-        pos_key = (result['start'], result['end'], result['key'])
-        if pos_key not in seen_positions:
-            seen_positions.add(pos_key)
-            unique_results.append(result)
-    
-    # 按行号和列号排序
-    unique_results.sort(key=lambda x: (x['line'], x['column']))
-    
-    return unique_results
+    def deduplicate_results(result_list):
+        unique_results = []
+        seen_positions = set()
+
+        for result in result_list:
+            pos_key = (result['start'], result['end'], result['key'])
+            if pos_key not in seen_positions:
+                seen_positions.add(pos_key)
+                unique_results.append(result)
+
+        # 按行号和列号排序
+        unique_results.sort(key=lambda x: (x['line'], x['column']))
+        return unique_results
+
+    return deduplicate_results(results), deduplicate_results(variable_interpolation_results)
 
 
 def _get_line_column_from_position(text: str, position: int) -> Tuple[int, int]:
@@ -98,9 +97,6 @@ def _get_line_column_from_position(text: str, position: int) -> Tuple[int, int]:
     return line_no, col_no
 
 
-
-
-
 def get_default_i18n_patterns() -> List[str]:
     """
     获取默认的国际化调用模式字符串列表
@@ -108,24 +104,19 @@ def get_default_i18n_patterns() -> List[str]:
     Returns:
         List[str]: 正则表达式模式字符串列表
     """
-    return [
-        # $t() with single/double quotes - 改进版本，支持复杂的参数结构
+    return [# $t() with single/double quotes - 改进版本，支持复杂的参数结构
         r'\$t\s*\(\s*([\'"])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
         # $t() with backticks - will be filtered out later if contains ${} 
-        r'\$t\s*\(\s*(`)((?:(?!`)[^\\]|\\.)*?)`\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
-        # 更强大的 $t() 模式，支持嵌套的对象参数和跨行
+        r'\$t\s*\(\s*(`)((?:(?!`)[^\\]|\\.)*?)`\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)', # 更强大的 $t() 模式，支持嵌套的对象参数和跨行
         r'\$t\s*\(\s*([\'"])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,\s*\{(?:[^{}]*|\{[^{}]*\})*\})?\s*\)',
         # req.t() - 支持Express.js中的请求对象国际化调用
         r'req\.t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,\s*\{(?:[^{}]*|\{[^{}]*\})*\})?\s*\)',
         # t() - 但前面不能是字母、$符号或点号
         r'(?<![a-zA-Z$\.])t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
         # i18n.t() - 支持单引号和双引号
-        r'i18n\.t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
-        # _() - 但前面不能是字母
-        r'(?<![a-zA-Z])_\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
-        # gettext()
-        r'gettext\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)',
-    ]
+        r'i18n\.t\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)', # _() - 但前面不能是字母
+        r'(?<![a-zA-Z])_\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)', # gettext()
+        r'gettext\s*\(\s*([\'"`])((?:(?!\1)[^\\]|\\.)*?)\1\s*(?:,(?:[^()]*|\([^()]*\))*?)?\s*\)', ]
 
 
 def _create_improved_patterns() -> List[Pattern]:
@@ -137,18 +128,15 @@ def _create_improved_patterns() -> List[Pattern]:
     """
     # 使用共享的模式字符串
     pattern_strings = get_default_i18n_patterns()
-    
+
     compiled_patterns = []
     for pattern in pattern_strings:
         try:
             compiled_patterns.append(re.compile(pattern, re.DOTALL | re.MULTILINE))
         except re.error as e:
             logger.warning(f"无效的正则表达式模式 '{pattern}': {e}")
-    
+
     return compiled_patterns
-
-
-
 
 
 def _contains_variable_interpolation(key: str) -> bool:
@@ -164,16 +152,16 @@ def _contains_variable_interpolation(key: str) -> bool:
     # 检查是否包含 ${} 模式的变量插值
     if re.search(r'\$\{[^}]+\}', key):
         return True
-    
+
     # 检查是否包含其他常见的变量插值模式
     # 例如 #{variable} 或 {{variable}}
     if re.search(r'[#{][^}]*[}]', key):
         return True
-        
+
     # 检查是否包含未闭合的插值符号
     if '${' in key or '#{' in key or '{{' in key:
         return True
-    
+
     return False
 
 
@@ -287,10 +275,10 @@ def create_key_pattern(key: str) -> str:
     """
     escaped_key = escape_regex_chars(key)
     patterns = [rf'(?<![a-zA-Z])t\([\'"`]{escaped_key}[\'"`]\)',  # t() but not preceded by any letter
-        rf'\$t\([\'"`]{escaped_key}[\'"`]\)',  # $t()
-        rf'req\.t\([\'"`]{escaped_key}[\'"`]\)',  # req.t()
-        rf'i18n\.t\([\'"`]{escaped_key}[\'"`]\)',  # i18n.t()
-        rf'(?<![a-zA-Z])_\([\'"`]{escaped_key}[\'"`]\)',  # _() but not preceded by any letter
-        rf'gettext\([\'"`]{escaped_key}[\'"`]\)'  # gettext()
-    ]
+                rf'\$t\([\'"`]{escaped_key}[\'"`]\)',  # $t()
+                rf'req\.t\([\'"`]{escaped_key}[\'"`]\)',  # req.t()
+                rf'i18n\.t\([\'"`]{escaped_key}[\'"`]\)',  # i18n.t()
+                rf'(?<![a-zA-Z])_\([\'"`]{escaped_key}[\'"`]\)',  # _() but not preceded by any letter
+                rf'gettext\([\'"`]{escaped_key}[\'"`]\)'  # gettext()
+                ]
     return '|'.join(patterns)
