@@ -443,22 +443,6 @@ class WelcomeWidget(QWidget):
         start_widget = QWidget()
         start_layout = QVBoxLayout(start_widget)
 
-        # 开始提示
-        start_label = QLabel("🎉 现在就开始您的国际化分析之旅吧！")
-        start_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        start_label.setStyleSheet("""
-            QLabel {
-                font-size: 16px;
-                font-weight: bold;
-                color: #2196F3;
-                background-color: #E3F2FD;
-                padding: 15px;
-                border-radius: 10px;
-                margin: 10px 0;
-            }
-        """)
-        start_layout.addWidget(start_label)
-
         # 操作提示
         action_label = QLabel("点击上方的「配置」标签页开始设置您的项目")
         action_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
