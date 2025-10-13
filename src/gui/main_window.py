@@ -14,13 +14,25 @@ import sys
 from typing import Optional
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QPixmap, QAction
+from PyQt6.QtGui import QPixmap, QAction, QIcon
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTabWidget, QMessageBox, QApplication,
                              QSplashScreen, QLabel, QScrollArea, QGroupBox)
 
 from .widgets import ConfigWidget, AnalysisWidget, ResultWidget
 from ..core.config import Config
 from ..core.optimizer import I18nOptimizer
+
+
+def get_resource_path(relative_path):
+    """获取资源文件的绝对路径，兼容开发环境和PyInstaller打包环境"""
+    try:
+        # PyInstaller会在运行时创建临时文件夹，并将路径存储在_MEIPASS中
+        base_path = sys._MEIPASS
+    except AttributeError:
+        # 开发环境，使用项目根目录
+        base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
+    return os.path.join(base_path, relative_path)
 
 
 class WelcomeWidget(QWidget):
@@ -477,6 +489,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("i18n-assistant - 国际化分析工具")
         self.setGeometry(100, 100, 1200, 800)
         self.setMinimumSize(1000, 600)
+        
+        # 设置窗口图标
+        icon_path = get_resource_path("analysis.ico")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
 
         # 创建中心部件
         central_widget = QWidget()
@@ -1068,6 +1085,11 @@ def create_application() -> QApplication:
 
     # 设置应用程序样式
     app.setStyle("Fusion")  # 使用现代样式
+    
+    # 设置应用程序图标
+    icon_path = get_resource_path("analysis.ico")
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
 
     return app
 

@@ -3,6 +3,8 @@ pyinstaller ^
   --onefile ^
   --windowed ^
   --name "i18n-assistant" ^
+  --icon "analysis.ico" ^
+  --add-data "analysis.ico;." ^
   --hidden-import "yaml" ^
   --hidden-import "yaml.loader" ^
   --hidden-import "yaml.dumper" ^
