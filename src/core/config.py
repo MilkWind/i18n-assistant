@@ -41,7 +41,7 @@ class Config:
     # 忽略模式配置
     ignore_patterns: List[str] = field(
         default_factory=lambda: ['node_modules/**', '.git/**', 'dist/**', 'build/**', '__pycache__/**', '.vscode/**',
-            '.idea/**', '.venv/**'])
+            '.idea/**', '.venv/**', '.next/**'])
 
     # 国际化调用模式配置
     i18n_patterns: List[str] = field(default_factory=get_default_i18n_patterns)
