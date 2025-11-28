@@ -41,7 +41,7 @@ class Config:
     # 忽略模式配置
     ignore_patterns: List[str] = field(
         default_factory=lambda: ['node_modules/**', '.git/**', 'dist/**', 'build/**', '__pycache__/**', '.vscode/**',
-            '.idea/**', '.venv/**', '.next/**'])
+                                 '.idea/**', '.venv/**', '.next/**', '.nuxt/**'])
 
     # 国际化调用模式配置
     i18n_patterns: List[str] = field(default_factory=get_default_i18n_patterns)
@@ -232,11 +232,11 @@ class ConfigManager:
             Dict[str, Any]: 配置字典
         """
         return {'project_path': self.config.project_path, 'i18n_path': self.config.i18n_path,
-            'output_path': self.config.output_path, 'ignore_patterns': self.config.ignore_patterns,
-            'i18n_patterns': self.config.i18n_patterns, 'file_extensions': self.config.file_extensions,
-            'parser_type': self.config.parser_type, 'max_threads': self.config.max_threads,
-            'encoding': self.config.encoding, 'generate_cleaned_files': self.config.generate_cleaned_files,
-            'report_format': self.config.report_format, 'auto_optimize': self.config.auto_optimize}
+                'output_path': self.config.output_path, 'ignore_patterns': self.config.ignore_patterns,
+                'i18n_patterns': self.config.i18n_patterns, 'file_extensions': self.config.file_extensions,
+                'parser_type': self.config.parser_type, 'max_threads': self.config.max_threads,
+                'encoding': self.config.encoding, 'generate_cleaned_files': self.config.generate_cleaned_files,
+                'report_format': self.config.report_format, 'auto_optimize': self.config.auto_optimize}
 
     def reset_to_default(self) -> None:
         """重置为默认配置"""

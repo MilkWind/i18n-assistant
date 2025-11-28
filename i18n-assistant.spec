@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_all
 
-datas = []
+datas = [('analysis.ico', '.')]
 binaries = []
 hiddenimports = ['yaml', 'yaml.loader', 'yaml.dumper', 'yaml.constructor', 'yaml.representer']
 tmp_ret = collect_all('yaml')
